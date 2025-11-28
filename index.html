@@ -86,6 +86,15 @@
             margin: 12px;
             font-family: 'Noto Sans TC', sans-serif;
         }
+        
+        /* Checkbox Animation */
+        .checkbox-wrapper input:checked + div {
+            background-color: #2dd4bf;
+            border-color: #2dd4bf;
+        }
+        .checkbox-wrapper input:checked + div svg {
+            display: block;
+        }
     </style>
     
     <script>
@@ -117,7 +126,7 @@
             <div class="flex justify-between items-start mb-6">
                 <div class="flex-1 mr-4">
                     <div class="flex items-center gap-2 mb-1">
-                        <!-- Editable Title Input (Fixed: Call saveToCloud() explicitly to avoid passing Event object) -->
+                        <!-- Editable Title Input -->
                         <input 
                             v-model="tripTitle" 
                             @blur="saveToCloud()"
@@ -138,14 +147,12 @@
                     <p class="text-xs text-stone-400 font-normal mt-0.5 tracking-widest uppercase">JAPAN TRAVEL PLANNER</p>
                 </div>
                 
-                <!-- Action Buttons -->
-                <div class="flex gap-2">
-                    <!-- View Toggle Button -->
+                <!-- Action Buttons (Only show in Itinerary mode) -->
+                <div class="flex gap-2" v-if="currentTab === 'itinerary'">
                     <button @click="toggleViewMode" class="w-20 h-8 rounded-full bg-white border border-stone-100 text-stone-400 hover:text-lake-500 hover:border-lake-200 flex items-center justify-center transition-all shadow-sm gap-1 text-xs font-bold">
                         <i class="fa-solid" :class="viewMode === 'list' ? 'fa-map' : 'fa-list-ul'"></i>
                         <span>{{ viewMode === 'list' ? 'Map' : 'List' }}</span>
                     </button>
-                    
                     <button @click="resetData" class="w-8 h-8 rounded-full bg-white border border-stone-100 text-stone-300 hover:text-red-400 hover:border-red-100 flex items-center justify-center transition-colors shadow-sm">
                         <i class="fa-solid fa-rotate-right text-xs"></i>
                     </button>
@@ -165,8 +172,22 @@
                 </div>
             </div>
 
-            <!-- App-style Day Selector (Horizontal Scroll) -->
-            <div class="relative -mx-6"> 
+            <!-- Main Tab Navigation -->
+            <div class="flex bg-stone-100 p-1 rounded-xl mb-4">
+                <button 
+                    v-for="tab in tabs" 
+                    :key="tab.id"
+                    @click="currentTab = tab.id"
+                    class="flex-1 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5"
+                    :class="currentTab === tab.id ? 'bg-white text-sumi shadow-sm' : 'text-stone-400 hover:text-stone-500'"
+                >
+                    <i :class="tab.icon"></i>
+                    {{ tab.label }}
+                </button>
+            </div>
+
+            <!-- Day Selector (Only visible in Itinerary tab) -->
+            <div v-if="currentTab === 'itinerary'" class="relative -mx-6 transition-all duration-300"> 
                 <div class="flex overflow-x-auto no-scrollbar snap-x-mandatory px-6 pb-2 gap-4" id="day-scroller">
                     <button 
                         v-for="(day, index) in days" 
@@ -183,7 +204,6 @@
                         </div>
                     </button>
                     
-                    <!-- Add Button -->
                     <button @click="manualAddDay" class="snap-center flex-shrink-0 px-4 py-2 flex items-center justify-center">
                         <div class="w-10 h-10 rounded-full bg-white border border-dashed border-lake-300 text-lake-400 flex items-center justify-center hover:bg-lake-50 transition-colors">
                             <i class="fa-solid fa-plus"></i>
@@ -195,99 +215,172 @@
             </div>
         </header>
 
-        <!-- Main Content Area (Stacking Map and List) -->
+        <!-- Main Content Area -->
         <main class="flex-1 overflow-hidden relative bg-washi">
             
-            <!-- LIST VIEW -->
-            <div v-show="viewMode === 'list'" class="absolute inset-0 overflow-y-auto p-4 pb-28" @scroll="checkScroll">
-                
-                <!-- Weather Card -->
-                <transition name="fade">
-                    <div v-if="currentDayWeatherSummary" class="mb-6 bg-gradient-to-br from-white to-lake-50 rounded-3xl p-5 shadow-sm border border-white flex justify-between items-center relative overflow-hidden group">
-                        <div class="absolute -right-4 -top-4 w-20 h-20 bg-lake-100 rounded-full opacity-50 blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
-                        <div class="z-10">
-                            <p class="text-[10px] font-bold text-lake-400 tracking-widest uppercase mb-1">Weather Forecast</p>
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-3xl font-bold text-sumi tracking-tight">{{ currentDayWeatherSummary.max }}°</span>
-                                <span class="text-sm text-stone-400 font-normal">/ {{ currentDayWeatherSummary.min }}°</span>
+            <!-- ====== ITINERARY TAB ====== -->
+            <div v-if="currentTab === 'itinerary'" class="h-full relative">
+                <!-- LIST VIEW -->
+                <div v-show="viewMode === 'list'" class="absolute inset-0 overflow-y-auto p-4 pb-28" @scroll="checkScroll">
+                    
+                    <!-- Weather Card -->
+                    <transition name="fade">
+                        <div v-if="currentDayWeatherSummary" class="mb-6 bg-gradient-to-br from-white to-lake-50 rounded-3xl p-5 shadow-sm border border-white flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute -right-4 -top-4 w-20 h-20 bg-lake-100 rounded-full opacity-50 blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
+                            <div class="z-10">
+                                <p class="text-[10px] font-bold text-lake-400 tracking-widest uppercase mb-1">Weather Forecast</p>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-3xl font-bold text-sumi tracking-tight">{{ currentDayWeatherSummary.max }}°</span>
+                                    <span class="text-sm text-stone-400 font-normal">/ {{ currentDayWeatherSummary.min }}°</span>
+                                </div>
+                            </div>
+                            <div class="z-10 text-lake-400 bg-white/60 backdrop-blur-sm p-3 rounded-2xl shadow-sm">
+                                <i class="fa-solid fa-cloud-sun text-xl"></i>
                             </div>
                         </div>
-                        <div class="z-10 text-lake-400 bg-white/60 backdrop-blur-sm p-3 rounded-2xl shadow-sm">
-                            <i class="fa-solid fa-cloud-sun text-xl"></i>
-                        </div>
-                    </div>
-                </transition>
+                    </transition>
 
-                <!-- Empty State -->
-                <div v-if="currentDayEvents.length === 0" class="flex flex-col items-center justify-center py-20 text-stone-300">
-                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-4 animate-pulse">
-                        <i class="fa-regular fa-map text-2xl text-lake-200"></i>
+                    <!-- Empty State -->
+                    <div v-if="currentDayEvents.length === 0" class="flex flex-col items-center justify-center py-20 text-stone-300">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-4 animate-pulse">
+                            <i class="fa-regular fa-map text-2xl text-lake-200"></i>
+                        </div>
+                        <p class="font-normal tracking-widest text-sm">PLAN YOUR JOURNEY</p>
                     </div>
-                    <p class="font-normal tracking-widest text-sm">PLAN YOUR JOURNEY</p>
+
+                    <!-- Timeline & Events -->
+                    <div v-else class="space-y-6 relative">
+                        <div class="absolute left-[19px] top-6 bottom-6 w-px bg-stone-200/60"></div>
+
+                        <transition-group name="slide-right" tag="div" class="space-y-6">
+                            <div v-for="event in sortedEvents" :key="event.id" class="relative pl-10 group">
+                                <!-- Timeline Dot -->
+                                <div class="absolute left-0 top-3 w-10 h-10 flex items-center justify-center z-10">
+                                    <div class="w-2.5 h-2.5 rounded-full ring-4 ring-washi transition-colors duration-300" :class="getTypeColor(event.type, 'dot')"></div>
+                                </div>
+                                <!-- Card -->
+                                <div class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-md" @click="editEvent(event)">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-bold font-mono tracking-tight" :class="getTypeColor(event.type, 'text')">{{ event.time }}</span>
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide bg-stone-50 text-stone-400 uppercase">{{ getTypeName(event.type) }}</span>
+                                        </div>
+                                        <a :href="getMapUrl(event.location)" target="_blank" @click.stop class="w-8 h-8 flex items-center justify-center rounded-full bg-stone-50 text-stone-300 hover:bg-lake-50 hover:text-lake-400 transition-colors">
+                                            <i class="fa-solid fa-location-arrow text-xs"></i>
+                                        </a>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-sumi mb-1 leading-snug">{{ event.title }}</h3>
+                                    <div class="flex items-center text-stone-400 text-xs mb-3 font-normal">
+                                        <i class="fa-solid fa-location-dot mr-1.5 opacity-50"></i>
+                                        <span class="truncate">{{ event.location }}</span>
+                                    </div>
+                                    <div v-if="getEventWeather(event.time)" class="absolute bottom-4 right-4 flex items-center text-xs text-lake-400 bg-lake-50/50 px-2 py-1 rounded-lg backdrop-blur-sm">
+                                        <i :class="getWeatherIcon(getEventWeather(event.time).code)" class="mr-1.5"></i>
+                                        <span>{{ getEventWeather(event.time).temp }}°</span>
+                                    </div>
+                                    <p v-if="event.note" class="text-stone-400 text-xs mt-3 pt-3 border-t border-stone-50/80 line-clamp-2 leading-relaxed font-normal">{{ event.note }}</p>
+                                </div>
+                            </div>
+                        </transition-group>
+                    </div>
                 </div>
 
-                <!-- Timeline & Events -->
-                <div v-else class="space-y-6 relative">
-                    <div class="absolute left-[19px] top-6 bottom-6 w-px bg-stone-200/60"></div>
-
-                    <transition-group name="slide-right" tag="div" class="space-y-6">
-                        <div v-for="event in sortedEvents" :key="event.id" class="relative pl-10 group">
-                            
-                            <!-- Timeline Dot -->
-                            <div class="absolute left-0 top-3 w-10 h-10 flex items-center justify-center z-10">
-                                <div class="w-2.5 h-2.5 rounded-full ring-4 ring-washi transition-colors duration-300" :class="getTypeColor(event.type, 'dot')"></div>
-                            </div>
-
-                            <!-- Card -->
-                            <div class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-md" @click="editEvent(event)">
-                                <div class="flex justify-between items-start mb-3">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-bold font-mono tracking-tight" :class="getTypeColor(event.type, 'text')">{{ event.time }}</span>
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide bg-stone-50 text-stone-400 uppercase">{{ getTypeName(event.type) }}</span>
-                                    </div>
-                                    <a :href="getMapUrl(event.location)" target="_blank" @click.stop class="w-8 h-8 flex items-center justify-center rounded-full bg-stone-50 text-stone-300 hover:bg-lake-50 hover:text-lake-400 transition-colors">
-                                        <i class="fa-solid fa-location-arrow text-xs"></i>
-                                    </a>
-                                </div>
-                                <h3 class="text-lg font-bold text-sumi mb-1 leading-snug">{{ event.title }}</h3>
-                                <div class="flex items-center text-stone-400 text-xs mb-3 font-normal">
-                                    <i class="fa-solid fa-location-dot mr-1.5 opacity-50"></i>
-                                    <span class="truncate">{{ event.location }}</span>
-                                </div>
-                                <div v-if="getEventWeather(event.time)" class="absolute bottom-4 right-4 flex items-center text-xs text-lake-400 bg-lake-50/50 px-2 py-1 rounded-lg backdrop-blur-sm">
-                                    <i :class="getWeatherIcon(getEventWeather(event.time).code)" class="mr-1.5"></i>
-                                    <span>{{ getEventWeather(event.time).temp }}°</span>
-                                </div>
-                                <p v-if="event.note" class="text-stone-400 text-xs mt-3 pt-3 border-t border-stone-50/80 line-clamp-2 leading-relaxed font-normal">{{ event.note }}</p>
-                            </div>
+                <!-- MAP VIEW -->
+                <div v-show="viewMode === 'map'" class="absolute inset-0 bg-stone-100">
+                    <div id="map-container"></div>
+                    <div v-if="isMapLoading" class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-2 rounded-xl shadow-lg z-[1000] flex items-center gap-2 text-xs font-bold text-lake-500">
+                        <div class="spinner w-3 h-3 border-t-lake-500"></div>
+                        <span>Locating...</span>
+                    </div>
+                    <div v-if="currentDayEvents.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
+                        <div class="bg-white/80 backdrop-blur px-6 py-4 rounded-2xl shadow-xl text-center">
+                            <p class="text-stone-500 font-bold">No locations yet</p>
+                            <p class="text-xs text-stone-400">Switch to list to add events</p>
                         </div>
-                    </transition-group>
+                    </div>
                 </div>
             </div>
 
-            <!-- MAP VIEW -->
-            <div v-show="viewMode === 'map'" class="absolute inset-0 bg-stone-100">
-                <div id="map-container"></div>
-                <!-- Map Loading Indicator -->
-                <div v-if="isMapLoading" class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-2 rounded-xl shadow-lg z-[1000] flex items-center gap-2 text-xs font-bold text-lake-500">
-                    <div class="spinner w-3 h-3 border-t-lake-500"></div>
-                    <span>Locating...</span>
+            <!-- ====== XUAN SHOPPING LIST TAB ====== -->
+            <div v-if="currentTab === 'xuan'" class="absolute inset-0 overflow-y-auto p-4 pb-28 bg-washi">
+                <div class="bg-white p-6 rounded-[32px] shadow-sm border border-stone-50 min-h-[400px]">
+                    <h2 class="text-xl font-bold text-sumi mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center text-sm"><i class="fa-solid fa-bag-shopping"></i></span>
+                        Xuan 的購物清單
+                    </h2>
+                    
+                    <div class="flex gap-2 mb-6">
+                        <input v-model="newItemXuan" @keydown.enter="addShoppingItem('xuan')" type="text" placeholder="想買什麼？ (Enter 新增)" class="flex-1 bg-stone-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-pink-200 transition-all outline-none">
+                        <button @click="addShoppingItem('xuan')" class="w-12 h-11 rounded-xl bg-pink-400 text-white shadow-lg shadow-pink-200 hover:bg-pink-500 transition-colors flex items-center justify-center">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        <transition-group name="slide-right">
+                            <div v-for="item in xuanList" :key="item.id" class="flex items-center gap-3 p-3 rounded-xl bg-stone-50 group hover:bg-white hover:shadow-sm border border-transparent hover:border-stone-100 transition-all">
+                                <label class="checkbox-wrapper cursor-pointer relative w-6 h-6">
+                                    <input type="checkbox" v-model="item.checked" @change="saveToCloud()" class="opacity-0 absolute w-full h-full cursor-pointer">
+                                    <div class="w-6 h-6 border-2 border-stone-300 rounded-lg flex items-center justify-center transition-all bg-white">
+                                        <svg class="w-3 h-3 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                </label>
+                                <span class="flex-1 text-sm font-medium transition-all" :class="item.checked ? 'text-stone-300 line-through' : 'text-sumi'">{{ item.text }}</span>
+                                <button @click="deleteShoppingItem('xuan', item.id)" class="text-stone-300 hover:text-red-400 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </transition-group>
+                        <div v-if="xuanList.length === 0" class="text-center py-10 text-stone-300 text-xs tracking-widest">
+                            EMPTY LIST
+                        </div>
+                    </div>
                 </div>
-                <!-- Empty Map Hint -->
-                <div v-if="currentDayEvents.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
-                    <div class="bg-white/80 backdrop-blur px-6 py-4 rounded-2xl shadow-xl text-center">
-                        <p class="text-stone-500 font-bold">No locations yet</p>
-                        <p class="text-xs text-stone-400">Switch to list to add events</p>
+            </div>
+
+            <!-- ====== CHIAU SHOPPING LIST TAB ====== -->
+            <div v-if="currentTab === 'chiau'" class="absolute inset-0 overflow-y-auto p-4 pb-28 bg-washi">
+                <div class="bg-white p-6 rounded-[32px] shadow-sm border border-stone-50 min-h-[400px]">
+                    <h2 class="text-xl font-bold text-sumi mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-500 flex items-center justify-center text-sm"><i class="fa-solid fa-cart-shopping"></i></span>
+                        Chiau 的購物清單
+                    </h2>
+                    
+                    <div class="flex gap-2 mb-6">
+                        <input v-model="newItemChiau" @keydown.enter="addShoppingItem('chiau')" type="text" placeholder="想買什麼？ (Enter 新增)" class="flex-1 bg-stone-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-200 transition-all outline-none">
+                        <button @click="addShoppingItem('chiau')" class="w-12 h-11 rounded-xl bg-indigo-400 text-white shadow-lg shadow-indigo-200 hover:bg-indigo-500 transition-colors flex items-center justify-center">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        <transition-group name="slide-right">
+                            <div v-for="item in chiauList" :key="item.id" class="flex items-center gap-3 p-3 rounded-xl bg-stone-50 group hover:bg-white hover:shadow-sm border border-transparent hover:border-stone-100 transition-all">
+                                <label class="checkbox-wrapper cursor-pointer relative w-6 h-6">
+                                    <input type="checkbox" v-model="item.checked" @change="saveToCloud()" class="opacity-0 absolute w-full h-full cursor-pointer">
+                                    <div class="w-6 h-6 border-2 border-stone-300 rounded-lg flex items-center justify-center transition-all bg-white">
+                                        <svg class="w-3 h-3 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                </label>
+                                <span class="flex-1 text-sm font-medium transition-all" :class="item.checked ? 'text-stone-300 line-through' : 'text-sumi'">{{ item.text }}</span>
+                                <button @click="deleteShoppingItem('chiau', item.id)" class="text-stone-300 hover:text-red-400 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </transition-group>
+                        <div v-if="chiauList.length === 0" class="text-center py-10 text-stone-300 text-xs tracking-widest">
+                            EMPTY LIST
+                        </div>
                     </div>
                 </div>
             </div>
 
         </main>
 
-        <!-- FAB (Floating Action Button) - Only show in list mode -->
+        <!-- FAB (Floating Action Button) - Only show in Itinerary List mode -->
         <transition name="fade">
             <button 
-                v-if="viewMode === 'list'"
+                v-if="currentTab === 'itinerary' && viewMode === 'list'"
                 @click="openAddModal" 
                 class="absolute bottom-8 right-6 w-14 h-14 bg-lake-400 text-white rounded-[20px] shadow-xl shadow-lake-300/40 flex items-center justify-center text-xl hover:bg-lake-500 hover:scale-105 active:scale-95 transition-all z-30"
             >
@@ -380,8 +473,22 @@
             const isEditing = ref(false);
             const tripTitle = ref('Nagoya.Go');
             
+            // Tab State
+            const currentTab = ref('itinerary'); // 'itinerary', 'xuan', 'chiau'
+            const tabs = [
+                { id: 'itinerary', label: '行程', icon: 'fa-solid fa-calendar-days' },
+                { id: 'xuan', label: 'Xuan', icon: 'fa-solid fa-user' },
+                { id: 'chiau', label: 'Chiau', icon: 'fa-solid fa-user' },
+            ];
+
+            // Shopping Lists
+            const xuanList = ref([]);
+            const chiauList = ref([]);
+            const newItemXuan = ref('');
+            const newItemChiau = ref('');
+            
             // View Mode State
-            const viewMode = ref('list'); // 'list' or 'map'
+            const viewMode = ref('list'); 
             const isScrolled = ref(false);
             const isMapLoading = ref(false);
             let map = null;
@@ -398,7 +505,7 @@
             let tripChannel = null;
             const TRIP_ID = 'nagoya_main'; 
 
-            // Form State (Added lat/lng support)
+            // Form State
             const form = ref({ id: null, time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null });
 
             // --- Default Data ---
@@ -411,6 +518,8 @@
                 tripTitle: 'Nagoya.Go',
                 startDate: defaultStartDate,
                 endDate: defaultEndDate,
+                xuanList: [],
+                chiauList: [],
                 days: [
                     {
                         date: 'Day 1',
@@ -431,6 +540,35 @@
                 ]
             };
 
+            // --- Shopping List Logic ---
+            const addShoppingItem = (who) => {
+                const text = who === 'xuan' ? newItemXuan.value.trim() : newItemChiau.value.trim();
+                if (!text) return;
+                
+                const item = { id: Date.now(), text, checked: false };
+                if (who === 'xuan') {
+                    xuanList.value.push(item);
+                    newItemXuan.value = '';
+                } else {
+                    chiauList.value.push(item);
+                    newItemChiau.value = '';
+                }
+                saveToCloud();
+            };
+
+            const deleteShoppingItem = (who, id) => {
+                if (!confirm('確定刪除此項目嗎？')) return;
+                
+                if (who === 'xuan') {
+                    const idx = xuanList.value.findIndex(i => i.id === id);
+                    if (idx !== -1) xuanList.value.splice(idx, 1);
+                } else {
+                    const idx = chiauList.value.findIndex(i => i.id === id);
+                    if (idx !== -1) chiauList.value.splice(idx, 1);
+                }
+                saveToCloud();
+            };
+
             // --- Map Logic ---
             const toggleViewMode = () => {
                 viewMode.value = viewMode.value === 'list' ? 'map' : 'list';
@@ -443,39 +581,29 @@
             };
 
             const initMap = () => {
-                if (map) return; // Already initialized
-                
-                // Default center (Nagoya Station)
+                if (map) return; 
                 map = L.map('map-container').setView([35.1709, 136.8815], 13);
-                
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                     subdomains: 'abcd',
                     maxZoom: 19
                 }).addTo(map);
-
-                // Re-render markers if map was kept in memory but hidden
                 renderMapMarkers();
             };
 
             const fetchCoordinates = async (address) => {
                 try {
-                    // Simple Geocoding using Nominatim
                     const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
                     const data = await response.json();
                     if (data && data.length > 0) {
                         return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
                     }
-                } catch (e) {
-                    console.error("Geocoding failed for:", address);
-                }
+                } catch (e) { console.error("Geocoding failed for:", address); }
                 return null;
             };
 
             const renderMapMarkers = async () => {
                 if (!map) return;
-                
-                // Clear existing markers
                 markers.forEach(marker => map.removeLayer(marker));
                 markers = [];
 
@@ -486,64 +614,40 @@
                 const bounds = L.latLngBounds();
                 let hasValidLocation = false;
 
-                // Process events
                 for (const event of events) {
-                    // If no coords but has location string, try to fetch
                     if ((!event.lat || !event.lng) && event.location) {
                         const coords = await fetchCoordinates(event.location);
                         if (coords) {
                             event.lat = coords.lat;
                             event.lng = coords.lng;
-                            // Silently save back to cloud if we fetched new coords
                             saveToCloud(); 
                         }
                     }
-
                     if (event.lat && event.lng) {
                         hasValidLocation = true;
-                        const marker = L.marker([event.lat, event.lng])
-                            .addTo(map)
-                            .bindPopup(`
-                                <div class="text-center">
-                                    <div class="text-xs font-bold text-lake-500 mb-1">${event.time}</div>
-                                    <div class="font-bold text-sumi">${event.title}</div>
-                                </div>
-                            `);
+                        const marker = L.marker([event.lat, event.lng]).addTo(map)
+                            .bindPopup(`<div class="text-center"><div class="text-xs font-bold text-lake-500 mb-1">${event.time}</div><div class="font-bold text-sumi">${event.title}</div></div>`);
                         markers.push(marker);
                         bounds.extend([event.lat, event.lng]);
                     }
                 }
-
-                if (hasValidLocation) {
-                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-                }
+                if (hasValidLocation) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
                 isMapLoading.value = false;
             };
 
-            // Watch day change to update map if visible
             watch(currentDayIndex, () => {
-                if (viewMode.value === 'map') {
-                    renderMapMarkers();
-                }
+                if (viewMode.value === 'map') renderMapMarkers();
             });
 
-            // --- Scroll Logic for Tabs & Header ---
+            // --- Navigation Logic ---
             const scrollToDay = (index) => {
                 changeDay(index);
                 const container = document.getElementById('day-scroller');
                 const buttons = container.querySelectorAll('button');
-                if (buttons[index]) {
-                    buttons[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                }
+                if (buttons[index]) buttons[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             };
-            
-            const changeDay = (index) => {
-                currentDayIndex.value = index;
-            };
-
-            const checkScroll = (e) => {
-                isScrolled.value = e.target.scrollTop > 10;
-            };
+            const changeDay = (index) => currentDayIndex.value = index;
+            const checkScroll = (e) => isScrolled.value = e.target.scrollTop > 10;
 
             // --- Date Logic ---
             const calculateEndDateFromDays = () => {
@@ -559,31 +663,16 @@
                 if (!startDate.value || !endDate.value) return;
                 const start = new Date(startDate.value);
                 const end = new Date(endDate.value);
-
-                if (end < start) {
-                    alert("回程日期不能早於出發日期！");
-                    calculateEndDateFromDays();
-                    return;
-                }
-
-                const diffTime = end - start;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                if (end < start) { alert("回程日期不能早於出發日期！"); calculateEndDateFromDays(); return; }
+                const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
                 const currentCount = days.value.length;
-
                 if (diffDays > currentCount) {
-                    for (let i = currentCount; i < diffDays; i++) {
-                        days.value.push({ date: `Day ${i + 1}`, events: [] });
-                    }
+                    for (let i = currentCount; i < diffDays; i++) days.value.push({ date: `Day ${i + 1}`, events: [] });
                 } else if (diffDays < currentCount) {
                     if (confirm(`縮短行程將刪除 Day ${diffDays + 1} 後的所有行程，確定嗎？`)) {
                         days.value = days.value.slice(0, diffDays);
-                        if (currentDayIndex.value >= days.value.length) {
-                            currentDayIndex.value = days.value.length - 1;
-                        }
-                    } else {
-                        calculateEndDateFromDays();
-                        return;
-                    }
+                        if (currentDayIndex.value >= days.value.length) currentDayIndex.value = days.value.length - 1;
+                    } else { calculateEndDateFromDays(); return; }
                 }
                 fetchWeather();
                 saveToCloud();
@@ -592,35 +681,32 @@
             // --- Supabase Logic ---
             const initSupabase = async () => {
                 if (!SUPABASE_URL || !SUPABASE_URL.startsWith('http') || SUPABASE_URL.includes('請在此填入')) {
-                    status.value = 'disconnected';
-                    loadLocalDefault();
-                    return;
+                    status.value = 'disconnected'; loadLocalDefault(); return;
                 }
                 try {
                     status.value = 'loading';
                     const { createClient } = window.supabase;
                     supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-                    
                     const { data, error } = await supabase.from('trip_plans').select('content').eq('id', TRIP_ID).maybeSingle();
                     if (error) throw error;
-
                     status.value = 'connected';
                     if (data && data.content) {
                         days.value = data.content.days || [];
                         startDate.value = data.content.startDate || defaultStartDate;
-                        if (data.content.endDate) endDate.value = data.content.endDate;
-                        else calculateEndDateFromDays();
+                        if (data.content.endDate) endDate.value = data.content.endDate; else calculateEndDateFromDays();
                         if (data.content.tripTitle) tripTitle.value = data.content.tripTitle;
+                        
+                        // Load Shopping Lists
+                        xuanList.value = data.content.xuanList || [];
+                        chiauList.value = data.content.chiauList || [];
+
                         fetchWeather();
                     } else {
-                        loadLocalDefault();
-                        saveToCloud(true);
+                        loadLocalDefault(); saveToCloud(true);
                     }
                     subscribeToRealtime();
                 } catch (e) {
-                    console.error("Supabase Connection Error:", e);
-                    status.value = 'disconnected';
-                    loadLocalDefault();
+                    console.error("Supabase Error:", e); status.value = 'disconnected'; loadLocalDefault();
                 }
             };
 
@@ -629,6 +715,8 @@
                 startDate.value = defaultData.startDate;
                 endDate.value = defaultData.endDate;
                 tripTitle.value = defaultData.tripTitle;
+                xuanList.value = defaultData.xuanList;
+                chiauList.value = defaultData.chiauList;
                 fetchWeather();
             }
 
@@ -636,37 +724,31 @@
                 if (tripChannel) supabase.removeChannel(tripChannel);
                 tripChannel = supabase.channel('room_nagoya')
                     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'trip_plans', filter: `id=eq.${TRIP_ID}` }, (payload) => {
-                        const newContent = payload.new.content;
-                        if (newContent) {
-                            days.value = newContent.days;
-                            startDate.value = newContent.startDate;
-                            if (newContent.endDate) endDate.value = newContent.endDate;
-                            else calculateEndDateFromDays();
-                            if (newContent.tripTitle) tripTitle.value = newContent.tripTitle;
+                        const content = payload.new.content;
+                        if (content) {
+                            days.value = content.days;
+                            startDate.value = content.startDate;
+                            if (content.endDate) endDate.value = content.endDate; else calculateEndDateFromDays();
+                            if (content.tripTitle) tripTitle.value = content.tripTitle;
+                            // Sync Shopping Lists
+                            if (content.xuanList) xuanList.value = content.xuanList;
+                            if (content.chiauList) chiauList.value = content.chiauList;
                             fetchWeather();
-                            // Update map if needed
                             if (viewMode.value === 'map') renderMapMarkers();
                         }
                     }).subscribe();
             };
 
-            // FIXED: ensure useDefault is strictly a boolean
             const saveToCloud = async (forceReset = false) => {
                 const isReset = forceReset === true;
                 if (!supabase) return;
-
                 const dataToSave = isReset ? defaultData : { 
-                    tripTitle: tripTitle.value,
-                    startDate: startDate.value, 
-                    endDate: endDate.value, 
-                    days: days.value 
+                    tripTitle: tripTitle.value, startDate: startDate.value, endDate: endDate.value, 
+                    days: days.value, xuanList: xuanList.value, chiauList: chiauList.value 
                 };
-                
                 if (isReset) {
-                    days.value = defaultData.days;
-                    startDate.value = defaultData.startDate;
-                    endDate.value = defaultData.endDate;
-                    tripTitle.value = defaultData.tripTitle;
+                    days.value = defaultData.days; startDate.value = defaultData.startDate; endDate.value = defaultData.endDate;
+                    tripTitle.value = defaultData.tripTitle; xuanList.value = defaultData.xuanList; chiauList.value = defaultData.chiauList;
                 }
                 const { error } = await supabase.from('trip_plans').upsert({ id: TRIP_ID, content: dataToSave });
                 if (error) console.error("Save Error:", error);
@@ -674,28 +756,19 @@
 
             // --- Weather & Other Helpers ---
             const fetchWeather = async () => {
-                const lat = 35.1815;
-                const lon = 136.9066;
-                
-                let url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo`;
-                
-                if (startDate.value && endDate.value) {
-                    url += `&start_date=${startDate.value}&end_date=${endDate.value}`;
-                }
-
+                const lat = 35.1815, lon = 136.9066;
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=16`;
                 try {
                     const response = await fetch(url);
-                    if (!response.ok) throw new Error('Weather API limit or error');
-                    const data = await response.json();
-                    weatherData.value = data;
+                    if (!response.ok) throw new Error('Weather API error');
+                    weatherData.value = await response.json();
                 } catch (e) { console.error("Weather error", e); }
             };
 
             const getDayDateString = (dayIdx, short = false) => {
                 const date = new Date(startDate.value);
                 date.setDate(date.getDate() + dayIdx);
-                const mm = date.getMonth() + 1;
-                const dd = date.getDate();
+                const mm = date.getMonth() + 1, dd = date.getDate();
                 const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
                 return short ? `${mm}/${dd} ${dayName}` : `${mm}/${dd}`;
             };
@@ -704,36 +777,21 @@
                 if (!weatherData.value || !startDate.value) return null;
                 const eventDate = new Date(startDate.value);
                 eventDate.setDate(eventDate.getDate() + currentDayIndex.value);
-                
-                const hourRaw = timeStr.split(':')[0];
-                const hour = hourRaw.length === 1 ? `0${hourRaw}` : hourRaw;
-                
-                const dateStr = eventDate.toISOString().split('T')[0];
-                const targetKey = `${dateStr}T${hour}:00`;
-                
-                if (weatherData.value.hourly && weatherData.value.hourly.time) {
+                const hour = timeStr.split(':')[0].padStart(2, '0');
+                const targetKey = `${eventDate.toISOString().split('T')[0]}T${hour}:00`;
+                if (weatherData.value.hourly?.time) {
                      const index = weatherData.value.hourly.time.findIndex(t => t === targetKey);
-                    if (index !== -1) {
-                        return {
-                            temp: Math.round(weatherData.value.hourly.temperature_2m[index]),
-                            code: weatherData.value.hourly.weathercode[index]
-                        };
-                    }
+                    if (index !== -1) return { temp: Math.round(weatherData.value.hourly.temperature_2m[index]), code: weatherData.value.hourly.weathercode[index] };
                 }
                 return null;
             };
 
             const currentDayWeatherSummary = computed(() => {
                 if (!weatherData.value || !startDate.value || !weatherData.value.daily) return null;
-                const eventDate = new Date(startDate.value);
-                eventDate.setDate(eventDate.getDate() + currentDayIndex.value);
-                const dateStr = eventDate.toISOString().split('T')[0];
-                const index = weatherData.value.daily.time.findIndex(t => t === dateStr);
-                if (index !== -1) {
-                    return {
-                        max: Math.round(weatherData.value.daily.temperature_2m_max[index]),
-                        min: Math.round(weatherData.value.daily.temperature_2m_min[index])
-                    };
+                const dateStr = new Date(new Date(startDate.value).setDate(new Date(startDate.value).getDate() + currentDayIndex.value)).toISOString().split('T')[0];
+                if (weatherData.value.daily.time) {
+                    const index = weatherData.value.daily.time.findIndex(t => t === dateStr);
+                    if (index !== -1) return { max: Math.round(weatherData.value.daily.temperature_2m_max[index]), min: Math.round(weatherData.value.daily.temperature_2m_min[index]) };
                 }
                 return null;
             });
@@ -744,33 +802,15 @@
             };
 
             const getTypeColor = (type, mode) => {
-                const colors = {
-                    sightseeing: { dot: 'bg-lake-400', text: 'text-lake-500' },
-                    food: { dot: 'bg-orange-300', text: 'text-orange-400' },
-                    shopping: { dot: 'bg-pink-300', text: 'text-pink-400' },
-                    transport: { dot: 'bg-stone-300', text: 'text-stone-400' },
-                    hotel: { dot: 'bg-indigo-300', text: 'text-indigo-400' }
-                };
-                const theme = colors[type] || colors['sightseeing'];
-                return theme[mode];
+                const colors = { sightseeing: { dot: 'bg-lake-400', text: 'text-lake-500' }, food: { dot: 'bg-orange-300', text: 'text-orange-400' }, shopping: { dot: 'bg-pink-300', text: 'text-pink-400' }, transport: { dot: 'bg-stone-300', text: 'text-stone-400' }, hotel: { dot: 'bg-indigo-300', text: 'text-indigo-400' } };
+                return (colors[type] || colors['sightseeing'])[mode];
             };
             
-            const getTypeName = (type) => {
-                const map = { sightseeing: '景點', food: '美食', shopping: '購物', transport: '交通', hotel: '住宿' };
-                return map[type] || '其他';
-            };
-            
-            const getMapUrl = (location) => location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}` : '#';
+            const getTypeName = (type) => ({ sightseeing: '景點', food: '美食', shopping: '購物', transport: '交通', hotel: '住宿' }[type] || '其他');
+            const getMapUrl = (loc) => loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '#';
 
             // --- CRUD ---
-            const manualAddDay = () => { 
-                days.value.push({ date: `Day ${days.value.length + 1}`, events: [] }); 
-                currentDayIndex.value = days.value.length - 1;
-                calculateEndDateFromDays();
-                saveToCloud();
-                setTimeout(() => scrollToDay(days.value.length - 1), 100);
-            };
-            
+            const manualAddDay = () => { days.value.push({ date: `Day ${days.value.length + 1}`, events: [] }); currentDayIndex.value = days.value.length - 1; calculateEndDateFromDays(); saveToCloud(); setTimeout(() => scrollToDay(days.value.length - 1), 100); };
             const openAddModal = () => { isEditing.value = false; form.value = { id: Date.now(), time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null }; showModal.value = true; };
             const editEvent = (event) => { isEditing.value = true; form.value = { ...event }; showModal.value = true; };
             const closeModal = () => showModal.value = false;
@@ -780,18 +820,11 @@
                 if (isEditing.value) {
                     const index = currentEvents.findIndex(e => e.id === form.value.id);
                     if (index !== -1) {
-                        const oldEvent = currentEvents[index];
-                        if (oldEvent.location !== form.value.location) {
-                            form.value.lat = null;
-                            form.value.lng = null;
-                        }
+                        if (currentEvents[index].location !== form.value.location) { form.value.lat = null; form.value.lng = null; }
                         currentEvents[index] = { ...form.value };
                     }
-                } else {
-                    currentEvents.push({ ...form.value });
-                }
-                saveToCloud();
-                closeModal();
+                } else currentEvents.push({ ...form.value });
+                saveToCloud(); closeModal();
             };
 
             const deleteEvent = () => {
@@ -799,31 +832,24 @@
                     const currentEvents = days.value[currentDayIndex.value].events;
                     const index = currentEvents.findIndex(e => e.id === form.value.id);
                     if (index !== -1) currentEvents.splice(index, 1);
-                    saveToCloud();
-                    closeModal();
+                    saveToCloud(); closeModal();
                 }
             };
 
-            const resetData = () => {
-                if(confirm('確定要重置所有資料嗎？')) {
-                    saveToCloud(true);
-                    currentDayIndex.value = 0;
-                    viewMode.value = 'list'; 
-                }
-            };
+            const resetData = () => { if(confirm('確定要重置所有資料嗎？')) { saveToCloud(true); currentDayIndex.value = 0; viewMode.value = 'list'; } };
 
             onMounted(() => { initSupabase(); fetchWeather(); });
 
             return {
-                days, currentDayIndex, showModal, isEditing, form, 
-                startDate, endDate, handleDateChange, manualAddDay, tripTitle,
-                weatherData, status, viewMode, isScrolled, isMapLoading,
+                days, currentDayIndex, showModal, isEditing, form, startDate, endDate, handleDateChange, manualAddDay, tripTitle,
+                weatherData, status, viewMode, isScrolled, isMapLoading, currentTab, tabs, xuanList, chiauList, newItemXuan, newItemChiau,
                 currentDayEvents: computed(() => (days.value[currentDayIndex.value]?.events || [])),
                 sortedEvents: computed(() => [...(days.value[currentDayIndex.value]?.events || [])].sort((a, b) => a.time.localeCompare(b.time))),
-                getTypeColor, getTypeName, getMapUrl, getWeatherIcon,
-                openAddModal, editEvent, closeModal, saveEvent, deleteEvent, resetData, scrollToDay, saveToCloud, changeDay,
-                getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll
+                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, deleteEvent, resetData, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem, deleteShoppingItem
             };
         }
     }).mount('#app');
 </script>
+
+</body>
+</html>
