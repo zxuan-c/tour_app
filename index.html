@@ -79,33 +79,6 @@
 <div id="app">
     <div class="app-container flex flex-col h-screen overflow-hidden">
         
-        <!-- Supabase Config Modal (Show if no keys) -->
-        <div v-if="!isSupabaseConfigured" class="absolute inset-0 z-[60] bg-gray-900 flex items-center justify-center p-6">
-            <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-                <div class="text-center mb-6">
-                    <img src="https://supabase.com/dashboard/img/supabase-logo.svg" alt="Supabase" class="h-10 mx-auto mb-3">
-                    <h2 class="text-xl font-bold text-gray-800">連結 Supabase 資料庫</h2>
-                    <p class="text-xs text-gray-500 mt-2">請輸入您的專案資訊以啟用多人同步</p>
-                </div>
-                
-                <form @submit.prevent="saveSupabaseConfig" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Project URL</label>
-                        <input v-model="configForm.url" type="text" placeholder="https://xyz.supabase.co" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Anon / Public Key</label>
-                        <input v-model="configForm.key" type="password" placeholder="eyJxh..." required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none">
-                    </div>
-                    
-                    <button type="submit" class="w-full bg-[#3ECF8E] text-white py-3 rounded-xl font-medium shadow-lg shadow-green-500/30 hover:bg-green-500 transition-colors">
-                        開始連線
-                    </button>
-                    <p class="text-[10px] text-gray-400 text-center mt-2">資訊僅儲存於您的瀏覽器</p>
-                </form>
-            </div>
-        </div>
-
         <!-- Header -->
         <header class="bg-white px-6 pt-12 pb-4 shadow-sm z-10 sticky top-0">
             <div class="flex justify-between items-start mb-4">
@@ -118,7 +91,7 @@
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                         </span>
-                        <span v-else class="h-2 w-2 rounded-full bg-red-400" title="斷線"></span>
+                        <span v-else class="h-2 w-2 rounded-full bg-red-400" title="未連線 (請設定 URL)"></span>
                     </div>
                     <div class="flex items-center mt-1 space-x-2">
                         <span class="text-xs text-gray-400">出發日期：</span>
@@ -131,9 +104,6 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button @click="clearConfig" class="text-gray-400 hover:text-gray-600 text-xs mt-1 bg-gray-50 px-2 py-1 rounded border border-gray-100" title="登出 Supabase">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
                     <button @click="resetData" class="text-gray-400 hover:text-red-500 text-xs mt-1 bg-gray-50 px-2 py-1 rounded border border-gray-100">
                         <i class="fa-solid fa-rotate-right mr-1"></i>重置
                     </button>
@@ -298,6 +268,13 @@
 
     createApp({
         setup() {
+            // ==========================================================
+            // 請在此填入您的 SUPABASE 資訊 (Settings > API)
+            // ==========================================================
+            const SUPABASE_URL = 'https://nrormwhklkytqyrbrdbr.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_QuvW2VoIHavfZ7RunbOl1A_Fu34ri_D';
+            // ==========================================================
+
             // --- State ---
             const days = ref([]);
             const currentDayIndex = ref(0);
@@ -307,9 +284,7 @@
             const weatherData = ref(null);
             
             // Supabase State
-            const isSupabaseConfigured = ref(false);
             const status = ref('disconnected'); // disconnected, loading, connected
-            const configForm = ref({ url: '', key: '' });
             let supabase = null;
             let tripChannel = null;
             const TRIP_ID = 'nagoya_main'; // The ID in the database
@@ -340,26 +315,27 @@
             };
 
             // --- Supabase Logic ---
-            const initSupabase = async (url, key) => {
-                if (!url || !key) return;
+            const initSupabase = async () => {
+                // Check if the URL is a valid http string and not the placeholder
+                if (!SUPABASE_URL || !SUPABASE_URL.startsWith('http') || SUPABASE_URL.includes('請在此填入')) {
+                    console.warn("尚未設定正確的 Supabase URL 或 Key，使用本機預設資料。");
+                    status.value = 'disconnected';
+                    days.value = defaultData.days; // Fallback to default
+                    return;
+                }
                 
                 try {
                     status.value = 'loading';
                     const { createClient } = window.supabase;
-                    supabase = createClient(url, key);
+                    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
                     
                     // Simple fetch to test connection
                     const { data, error } = await supabase.from('trip_plans').select('content').eq('id', TRIP_ID).maybeSingle();
                     
                     if (error) throw error;
 
-                    isSupabaseConfigured.value = true;
                     status.value = 'connected';
                     
-                    // Save credentials to local storage for next time
-                    localStorage.setItem('supabase_conf_url', url);
-                    localStorage.setItem('supabase_conf_key', key);
-
                     if (data && data.content) {
                         // Load data from DB
                         days.value = data.content.days || [];
@@ -375,9 +351,10 @@
 
                 } catch (e) {
                     console.error("Supabase Connection Error:", e);
-                    alert("連線失敗：請檢查您的 URL, Key 或資料表設定 (請參考說明)");
+                    // Don't alert aggressively on load, just log it
+                    // alert("連線失敗：請檢查程式碼中的 URL 和 Key");
                     status.value = 'disconnected';
-                    isSupabaseConfigured.value = false;
+                    days.value = defaultData.days; // Fail gracefully to local data
                 }
             };
 
@@ -420,18 +397,6 @@
                     .upsert({ id: TRIP_ID, content: dataToSave });
 
                 if (error) console.error("Save Error:", error);
-            };
-
-            const saveSupabaseConfig = () => {
-                initSupabase(configForm.value.url, configForm.value.key);
-            };
-
-            const clearConfig = () => {
-                if(confirm('確定要清除連線設定並登出嗎？')) {
-                    localStorage.removeItem('supabase_conf_url');
-                    localStorage.removeItem('supabase_conf_key');
-                    location.reload();
-                }
             };
 
             // --- Weather Logic (Same as before) ---
@@ -493,18 +458,7 @@
 
             // --- Lifecycle ---
             onMounted(() => {
-                // Check local storage for existing config
-                const savedUrl = localStorage.getItem('supabase_conf_url');
-                const savedKey = localStorage.getItem('supabase_conf_key');
-                
-                if (savedUrl && savedKey) {
-                    configForm.value.url = savedUrl;
-                    configForm.value.key = savedKey;
-                    initSupabase(savedUrl, savedKey);
-                } else {
-                    // Stay disconnected, modal will show
-                }
-                
+                initSupabase();
                 fetchWeather();
             });
 
@@ -579,7 +533,7 @@
 
             return {
                 days, currentDayIndex, showModal, isEditing, form, startDate, weatherData, 
-                status, isSupabaseConfigured, configForm, saveSupabaseConfig, clearConfig,
+                status,
                 currentDayEvents, sortedEvents,
                 getTypeColor, getTypeIcon, getMapUrl, getWeatherIcon,
                 addDay, openAddModal, editEvent, closeModal, saveEvent, deleteEvent, resetData, saveToCloud,
