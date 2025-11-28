@@ -159,7 +159,7 @@
                         <i class="fa-solid" :class="viewMode === 'list' ? 'fa-map' : 'fa-list-ul'"></i>
                         <span>{{ viewMode === 'list' ? 'Map' : 'List' }}</span>
                     </button>
-                    <button @click="resetData" class="w-8 h-8 rounded-full bg-white border border-stone-100 text-stone-300 hover:text-red-400 hover:border-red-100 flex items-center justify-center transition-colors shadow-sm">
+                    <button @click="confirmAction('reset')" class="w-8 h-8 rounded-full bg-white border border-stone-100 text-stone-300 hover:text-red-400 hover:border-red-100 flex items-center justify-center transition-colors shadow-sm">
                         <i class="fa-solid fa-rotate-right text-xs"></i>
                     </button>
                 </div>
@@ -420,7 +420,7 @@
                                     </div>
                                 </label>
                                 <span class="flex-1 text-sm font-medium transition-all" :class="item.checked ? 'text-stone-300 line-through' : 'text-sumi'">{{ item.text }}</span>
-                                <button @click="deleteShoppingItem('xuan', item.id)" class="text-stone-300 hover:text-red-400 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
+                                <button @click="confirmAction('deleteItem', {who: 'xuan', id: item.id})" class="text-stone-300 hover:text-red-400 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -457,7 +457,7 @@
                                     </div>
                                 </label>
                                 <span class="flex-1 text-sm font-medium transition-all" :class="item.checked ? 'text-stone-300 line-through' : 'text-sumi'">{{ item.text }}</span>
-                                <button @click="deleteShoppingItem('chiau', item.id)" class="text-stone-300 hover:text-red-400 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
+                                <button @click="confirmAction('deleteItem', {who: 'chiau', id: item.id})" class="text-stone-300 hover:text-red-400 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -482,6 +482,23 @@
             </button>
         </transition>
 
+        <!-- CONFIRMATION MODAL (Replaces window.confirm) -->
+        <transition name="fade">
+            <div v-if="confirmState.show" class="absolute inset-0 z-[60] flex items-center justify-center bg-stone-900/30 backdrop-blur-sm p-6">
+                <div class="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-xs text-center transform transition-all scale-100">
+                    <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center mx-auto mb-4 text-xl">
+                        <i class="fa-solid fa-exclamation"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-sumi mb-2">Are you sure?</h3>
+                    <p class="text-sm text-stone-400 mb-6">{{ confirmState.message }}</p>
+                    <div class="flex gap-3">
+                        <button @click="confirmState.show = false" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-400 font-medium hover:bg-stone-50 transition-colors">Cancel</button>
+                        <button @click="executeConfirm" class="flex-1 py-2.5 rounded-xl bg-red-400 text-white font-bold shadow-lg shadow-red-200 hover:bg-red-500 transition-colors">Yes, Delete</button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
         <!-- Edit/Add Event Modal (Standard) -->
         <transition name="slide-up">
             <div v-if="showModal && !isFlightMode" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
@@ -497,7 +514,20 @@
                         <div class="grid grid-cols-5 gap-4">
                             <div class="col-span-2">
                                 <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Time</label>
-                                <input v-model="form.time" type="time" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 transition-shadow">
+                                <!-- Custom Time Picker (24H, No AM/PM) -->
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <select v-model="form.hour" required class="w-full bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                            <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
+                                        </select>
+                                    </div>
+                                    <span class="py-3 text-stone-300">:</span>
+                                    <div class="relative flex-1">
+                                        <select v-model="form.minute" required class="w-full bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                            <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-span-3">
                                 <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Category</label>
@@ -536,7 +566,7 @@
                         </div>
 
                         <div class="pt-6 flex gap-3">
-                            <button v-if="isEditing" type="button" @click="deleteEvent" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors">
+                            <button v-if="isEditing" type="button" @click="confirmAction('deleteEvent')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors">
                                 <i class="fa-regular fa-trash-can"></i>
                             </button>
                             <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold shadow-lg shadow-lake-200 hover:bg-lake-500 transition-all">
@@ -596,7 +626,7 @@
                         </div>
 
                         <div class="pt-6 flex gap-3">
-                            <button type="button" @click="clearFlightData" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors">
+                            <button type="button" @click="confirmAction('clearFlight')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors">
                                 <i class="fa-regular fa-trash-can"></i>
                             </button>
                             <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold shadow-lg shadow-lake-200 hover:bg-lake-500 transition-all">
@@ -625,10 +655,13 @@
             const currentDayIndex = ref(0);
             const showModal = ref(false);
             const isEditing = ref(false);
-            const isFlightMode = ref(false); // New flag for flight modal
-            const editingFlightType = ref(''); // 'arrival' or 'departure'
+            const isFlightMode = ref(false); 
+            const editingFlightType = ref(''); 
             const tripTitle = ref('Nagoya.Go');
             
+            // Confirm Modal State
+            const confirmState = ref({ show: false, message: '', type: '', payload: null });
+
             // Special Flights
             const arrivalFlight = ref({ code: '', time: '', title: '', location: '', note: '', lat: null, lng: null });
             const departureFlight = ref({ code: '', time: '', title: '', location: '', note: '', lat: null, lng: null });
@@ -669,7 +702,7 @@
             const TRIP_ID = 'nagoya_main'; 
 
             // Standard Event Form State
-            const form = ref({ id: null, time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null });
+            const form = ref({ id: null, time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null, hour: '09', minute: '00' });
 
             // --- Default Data ---
             const defaultStartDate = new Date().toISOString().split('T')[0];
@@ -702,50 +735,74 @@
                 ]
             };
 
+            // --- Custom Confirmation Logic ---
+            const confirmAction = (type, payload = null) => {
+                confirmState.value.type = type;
+                confirmState.value.payload = payload;
+                confirmState.value.show = true;
+                
+                if (type === 'deleteEvent') confirmState.value.message = '確定要刪除這個行程嗎？';
+                else if (type === 'deleteItem') confirmState.value.message = '確定刪除此購物項目嗎？';
+                else if (type === 'clearFlight') confirmState.value.message = '確定清除此航班資訊嗎？';
+                else if (type === 'reset') confirmState.value.message = '確定要重置所有資料嗎？';
+            };
+
+            const executeConfirm = () => {
+                const { type, payload } = confirmState.value;
+                confirmState.value.show = false;
+
+                if (type === 'deleteEvent') {
+                    const currentEvents = days.value[currentDayIndex.value].events;
+                    const index = currentEvents.findIndex(e => e.id === form.value.id);
+                    if (index !== -1) currentEvents.splice(index, 1);
+                    saveToCloud(); closeModal();
+                } 
+                else if (type === 'deleteItem') {
+                    const list = payload.who === 'xuan' ? xuanList : chiauList;
+                    const idx = list.value.findIndex(i => i.id === payload.id);
+                    if (idx !== -1) list.value.splice(idx, 1);
+                    saveToCloud();
+                }
+                else if (type === 'clearFlight') {
+                    const target = editingFlightType.value === 'arrival' ? arrivalFlight : departureFlight;
+                    target.value = { code: '', time: '', title: '', location: '', note: '', lat: null, lng: null };
+                    saveToCloud(); closeModal();
+                }
+                else if (type === 'reset') {
+                    saveToCloud(true); 
+                    currentDayIndex.value = 0; 
+                    viewMode.value = 'list';
+                }
+            };
+
             // --- Flight Logic (Manual) ---
             const openFlightModal = (type) => {
                 isFlightMode.value = true;
                 editingFlightType.value = type;
-                
-                // Pre-fill form if data exists
                 const target = type === 'arrival' ? arrivalFlight.value : departureFlight.value;
                 flightForm.value = { ...target };
-                
                 showModal.value = true;
             };
 
             const saveFlight = () => {
                 const target = editingFlightType.value === 'arrival' ? arrivalFlight : departureFlight;
-                
                 target.value = {
-                    ...target.value, // keep lat/lng if existing
+                    ...target.value,
                     code: flightForm.value.code.toUpperCase(),
                     title: flightForm.value.title,
                     time: flightForm.value.time,
                     location: flightForm.value.location,
                     note: flightForm.value.note
                 };
-                
-                // Try to geocode if location changed (simple check)
                 if (flightForm.value.location) {
-                    // This is async but we don't await it to close modal fast
                     fetchCoordinates(flightForm.value.location).then(coords => {
                         if(coords) {
                             target.value.lat = coords.lat;
                             target.value.lng = coords.lng;
-                            saveToCloud(); // Save again with coords
+                            saveToCloud(); 
                         }
                     });
                 }
-
-                saveToCloud();
-                closeModal();
-            };
-
-            const clearFlightData = () => {
-                if(!confirm('確定清除此航班資訊嗎？')) return;
-                const target = editingFlightType.value === 'arrival' ? arrivalFlight : departureFlight;
-                target.value = { code: '', time: '', title: '', location: '', note: '', lat: null, lng: null };
                 saveToCloud();
                 closeModal();
             };
@@ -757,13 +814,6 @@
                 const item = { id: Date.now(), text, checked: false };
                 if (who === 'xuan') { xuanList.value.push(item); newItemXuan.value = ''; } 
                 else { chiauList.value.push(item); newItemChiau.value = ''; }
-                saveToCloud();
-            };
-
-            const deleteShoppingItem = (who, id) => {
-                if (!confirm('確定刪除此項目嗎？')) return;
-                if (who === 'xuan') { const idx = xuanList.value.findIndex(i => i.id === id); if (idx !== -1) xuanList.value.splice(idx, 1); } 
-                else { const idx = chiauList.value.findIndex(i => i.id === id); if (idx !== -1) chiauList.value.splice(idx, 1); }
                 saveToCloud();
             };
 
@@ -796,7 +846,6 @@
 
                 const events = days.value[currentDayIndex.value]?.events || [];
                 
-                // Add Flight Markers if on Day 1 or Last Day
                 if (currentDayIndex.value === 0 && arrivalFlight.value.lat) {
                     const m = L.marker([arrivalFlight.value.lat, arrivalFlight.value.lng]).addTo(map)
                         .bindPopup(`<div class="text-center font-bold text-lake-500">✈️ Arrival: ${arrivalFlight.value.code}</div>`);
@@ -814,7 +863,6 @@
                 const bounds = L.latLngBounds();
                 let hasValidLocation = false;
 
-                // Include flight markers in bounds
                 if (markers.length > 0) markers.forEach(m => bounds.extend(m.getLatLng()));
 
                 for (const event of events) {
@@ -898,7 +946,6 @@
                         xuanList.value = data.content.xuanList || [];
                         chiauList.value = data.content.chiauList || [];
                         
-                        // Load Flights
                         if (data.content.arrivalFlight) arrivalFlight.value = data.content.arrivalFlight;
                         if (data.content.departureFlight) departureFlight.value = data.content.departureFlight;
 
@@ -994,6 +1041,19 @@
                 return null;
             };
 
+            const getFlightDisplayTime = (time, type) => {
+                if (!time) return '';
+                if (time.includes('/')) return time;
+                
+                const dateVal = type === 'arrival' ? startDate.value : endDate.value;
+                if (!dateVal) return time;
+                
+                const parts = dateVal.split('-');
+                const mm = parseInt(parts[1], 10);
+                const dd = parseInt(parts[2], 10);
+                return `${mm}/${dd} ${time}`;
+            };
+
             const currentDayWeatherSummary = computed(() => {
                 if (!weatherData.value || !startDate.value || !weatherData.value.daily) return null;
                 const dateStr = new Date(new Date(startDate.value).setDate(new Date(startDate.value).getDate() + currentDayIndex.value)).toISOString().split('T')[0];
@@ -1022,18 +1082,23 @@
             const openAddModal = () => { 
                 isFlightMode.value = false;
                 isEditing.value = false; 
-                form.value = { id: Date.now(), time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null }; 
+                // Set default hour/minute
+                form.value = { id: Date.now(), time: '09:00', hour: '09', minute: '00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null }; 
                 showModal.value = true; 
             };
             const editEvent = (event) => { 
                 isFlightMode.value = false;
                 isEditing.value = true; 
-                form.value = { ...event }; 
+                const [h, m] = event.time.split(':');
+                form.value = { ...event, hour: h, minute: m }; 
                 showModal.value = true; 
             };
             const closeModal = () => showModal.value = false;
             
             const saveEvent = () => {
+                // Combine hour/minute
+                form.value.time = `${form.value.hour}:${form.value.minute}`;
+                
                 const currentEvents = days.value[currentDayIndex.value].events;
                 if (isEditing.value) {
                     const index = currentEvents.findIndex(e => e.id === form.value.id);
@@ -1045,27 +1110,20 @@
                 saveToCloud(); closeModal();
             };
 
-            const deleteEvent = () => {
-                if (confirm('確定要刪除這個行程嗎？')) {
-                    const currentEvents = days.value[currentDayIndex.value].events;
-                    const index = currentEvents.findIndex(e => e.id === form.value.id);
-                    if (index !== -1) currentEvents.splice(index, 1);
-                    saveToCloud(); closeModal();
-                }
-            };
-
-            const resetData = () => { if(confirm('確定要重置所有資料嗎？')) { saveToCloud(true); currentDayIndex.value = 0; viewMode.value = 'list'; } };
-
             onMounted(() => { initSupabase(); fetchWeather(); });
 
             return {
                 days, currentDayIndex, showModal, isEditing, form, startDate, endDate, handleDateChange, manualAddDay, tripTitle,
                 weatherData, status, viewMode, isScrolled, isMapLoading, currentTab, tabs, xuanList, chiauList, newItemXuan, newItemChiau,
-                arrivalFlight, departureFlight, flightForm, openFlightModal, saveFlight, clearFlightData, isFlightMode, editingFlightType,
+                arrivalFlight, departureFlight, flightForm, openFlightModal, saveFlight, isFlightMode, editingFlightType,
+                confirmState, confirmAction, executeConfirm,
                 currentDayEvents: computed(() => (days.value[currentDayIndex.value]?.events || [])),
                 sortedEvents: computed(() => [...(days.value[currentDayIndex.value]?.events || [])].sort((a, b) => a.time.localeCompare(b.time))),
-                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, deleteEvent, resetData, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem, deleteShoppingItem
+                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem
             };
         }
     }).mount('#app');
 </script>
+
+</body>
+</html>
