@@ -239,15 +239,12 @@
                                 </div>
                             </div>
                             
-                            <!-- Empty State: Input -->
-                            <div v-if="!arrivalFlight.code" class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 border-dashed border-lake-200">
-                                <label class="block text-[10px] font-bold text-lake-400 uppercase mb-2 tracking-widest">Departure Flight (To Nagoya)</label>
-                                <div class="flex gap-2">
-                                    <input v-model="tempFlightCodeArrival" @keydown.enter="updateFlight('arrival', tempFlightCodeArrival)" type="text" placeholder="Flight Code (e.g. JX838)" class="flex-1 bg-lake-50 border-none rounded-xl px-4 py-3 text-sm text-sumi focus:ring-2 focus:ring-lake-200 uppercase">
-                                    <button @click="updateFlight('arrival', tempFlightCodeArrival)" class="bg-lake-400 text-white px-4 rounded-xl font-bold text-sm shadow-md shadow-lake-200 hover:bg-lake-500 transition-all">
-                                        <i class="fa-solid fa-check"></i>
-                                    </button>
-                                </div>
+                            <!-- Empty State: Button -->
+                            <div v-if="!arrivalFlight.code" class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 border-dashed border-lake-200 flex items-center justify-center">
+                                <button @click="openFlightModal('arrival')" class="flex items-center gap-2 text-lake-400 font-bold bg-lake-50 px-6 py-3 rounded-xl hover:bg-lake-100 transition-colors">
+                                    <i class="fa-solid fa-plus"></i>
+                                    設定去程航班資訊 (Manual)
+                                </button>
                             </div>
 
                             <!-- Filled State: Flight Ticket Card -->
@@ -262,13 +259,13 @@
                                         <p class="text-xs text-stone-400">{{ arrivalFlight.location }}</p>
                                     </div>
                                     <div class="text-right">
-                                        <div class="text-2xl font-bold text-sumi font-mono tracking-tight">{{ arrivalFlight.time }}</div>
+                                        <div class="text-lg font-bold text-sumi font-mono tracking-tight">{{ arrivalFlight.time }}</div>
                                         <div class="text-[10px] text-stone-400 uppercase tracking-widest font-bold">Estimated</div>
                                     </div>
                                 </div>
                                 <div class="mt-4 pt-3 border-t border-lake-100 flex items-center justify-between text-xs text-stone-500 relative z-10">
                                     <span class="flex items-center gap-1.5"><i class="fa-regular fa-clock text-lake-400"></i> {{ arrivalFlight.note }}</span>
-                                    <button @click="arrivalFlight.code = ''" class="text-stone-300 hover:text-lake-500 transition-colors px-2 py-1"><i class="fa-solid fa-pen"></i></button>
+                                    <button @click="openFlightModal('arrival')" class="text-stone-300 hover:text-lake-500 transition-colors px-2 py-1"><i class="fa-solid fa-pen"></i></button>
                                 </div>
                                 <!-- Decor -->
                                 <i class="fa-solid fa-plane absolute -bottom-4 -right-4 text-[100px] text-lake-50 opacity-50 transform -rotate-45 pointer-events-none"></i>
@@ -348,14 +345,11 @@
                             </div>
                             
                             <!-- Empty State -->
-                            <div v-if="!departureFlight.code" class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 border-dashed border-stone-200">
-                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Return Flight (To Home)</label>
-                                <div class="flex gap-2">
-                                    <input v-model="tempFlightCodeDeparture" @keydown.enter="updateFlight('departure', tempFlightCodeDeparture)" type="text" placeholder="Flight Code (e.g. JX839)" class="flex-1 bg-stone-50 border-none rounded-xl px-4 py-3 text-sm text-sumi focus:ring-2 focus:ring-stone-200 uppercase">
-                                    <button @click="updateFlight('departure', tempFlightCodeDeparture)" class="bg-stone-400 text-white px-4 rounded-xl font-bold text-sm shadow-md hover:bg-stone-500 transition-all">
-                                        <i class="fa-solid fa-check"></i>
-                                    </button>
-                                </div>
+                            <div v-if="!departureFlight.code" class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 border-dashed border-stone-200 flex items-center justify-center">
+                                <button @click="openFlightModal('departure')" class="flex items-center gap-2 text-stone-400 font-bold bg-stone-50 px-6 py-3 rounded-xl hover:bg-stone-100 transition-colors">
+                                    <i class="fa-solid fa-plus"></i>
+                                    設定回程航班資訊 (Manual)
+                                </button>
                             </div>
 
                             <!-- Filled State -->
@@ -370,13 +364,13 @@
                                         <p class="text-xs text-stone-400">{{ departureFlight.location }}</p>
                                     </div>
                                     <div class="text-right">
-                                        <div class="text-2xl font-bold text-sumi font-mono tracking-tight">{{ departureFlight.time }}</div>
+                                        <div class="text-lg font-bold text-sumi font-mono tracking-tight">{{ departureFlight.time }}</div>
                                         <div class="text-[10px] text-stone-400 uppercase tracking-widest font-bold">Departure</div>
                                     </div>
                                 </div>
                                 <div class="mt-4 pt-3 border-t border-lake-100 flex items-center justify-between text-xs text-stone-500 relative z-10">
                                     <span class="flex items-center gap-1.5"><i class="fa-regular fa-clock text-stone-400"></i> {{ departureFlight.note }}</span>
-                                    <button @click="departureFlight.code = ''" class="text-stone-300 hover:text-stone-500 transition-colors px-2 py-1"><i class="fa-solid fa-pen"></i></button>
+                                    <button @click="openFlightModal('departure')" class="text-stone-300 hover:text-stone-500 transition-colors px-2 py-1"><i class="fa-solid fa-pen"></i></button>
                                 </div>
                                 <i class="fa-solid fa-plane-departure absolute -bottom-4 -right-4 text-[100px] text-stone-100 opacity-50 transform -rotate-12 pointer-events-none"></i>
                             </div>
@@ -488,9 +482,9 @@
             </button>
         </transition>
 
-        <!-- Edit/Add Modal (Clean sheet) -->
+        <!-- Edit/Add Event Modal (Standard) -->
         <transition name="slide-up">
-            <div v-if="showModal" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
+            <div v-if="showModal && !isFlightMode" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
                 <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto transition-opacity"></div>
                 
                 <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 pointer-events-auto shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -554,6 +548,66 @@
             </div>
         </transition>
 
+        <!-- Edit/Add FLIGHT Modal (Manual Input Only) -->
+        <transition name="slide-up">
+            <div v-if="showModal && isFlightMode" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
+                <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto transition-opacity"></div>
+                
+                <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 pointer-events-auto shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                    <div class="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-6"></div>
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-xl font-bold text-sumi tracking-wide">
+                            {{ editingFlightType === 'arrival' ? '去程航班' : '回程航班' }}
+                        </h2>
+                    </div>
+
+                    <form @submit.prevent="saveFlight" class="space-y-6">
+                        <!-- Flight Code -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">航班代號 (Flight Code)</label>
+                            <input v-model="flightForm.code" type="text" placeholder="e.g. JX838" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow uppercase font-mono">
+                        </div>
+
+                        <!-- Airline/Title -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">航空公司 / 標題</label>
+                            <input v-model="flightForm.title" type="text" placeholder="e.g. 星宇航空" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow">
+                        </div>
+
+                        <!-- Time Range (Text) -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">起降時間 (Time Range)</label>
+                            <input v-model="flightForm.time" type="text" placeholder="e.g. 14:55 - 18:30" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow">
+                        </div>
+
+                        <!-- Location -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">機場 / 地點</label>
+                            <div class="relative">
+                                <input v-model="flightForm.location" type="text" placeholder="e.g. 中部國際機場 (NGO)" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 pl-10 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow">
+                                <i class="fa-solid fa-map-pin absolute left-4 top-3.5 text-stone-300 text-sm"></i>
+                            </div>
+                        </div>
+
+                        <!-- Note -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">備註 / 航廈</label>
+                            <textarea v-model="flightForm.note" rows="3" placeholder="e.g. 第二航廈, 提早2小時報到..." class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow resize-none"></textarea>
+                        </div>
+
+                        <div class="pt-6 flex gap-3">
+                            <button type="button" @click="clearFlightData" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                            <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold shadow-lg shadow-lake-200 hover:bg-lake-500 transition-all">
+                                儲存航班資訊
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </transition>
+
     </div>
 </div>
 
@@ -571,13 +625,16 @@
             const currentDayIndex = ref(0);
             const showModal = ref(false);
             const isEditing = ref(false);
+            const isFlightMode = ref(false); // New flag for flight modal
+            const editingFlightType = ref(''); // 'arrival' or 'departure'
             const tripTitle = ref('Nagoya.Go');
             
             // Special Flights
             const arrivalFlight = ref({ code: '', time: '', title: '', location: '', note: '', lat: null, lng: null });
             const departureFlight = ref({ code: '', time: '', title: '', location: '', note: '', lat: null, lng: null });
-            const tempFlightCodeArrival = ref('');
-            const tempFlightCodeDeparture = ref('');
+            
+            // Flight Form Data
+            const flightForm = ref({ code: '', time: '', title: '', location: '', note: '' });
 
             // Tab State
             const currentTab = ref('itinerary'); 
@@ -611,41 +668,8 @@
             let tripChannel = null;
             const TRIP_ID = 'nagoya_main'; 
 
-            // Form State
-            const form = ref({ id: null, time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null, flightCode: '' });
-
-            // --- Flight Database (Mock) ---
-            const flightDB = {
-                // TPE -> NGO
-                'JX838': { time: '14:40', title: '星宇航空 JX838', loc: 'Chubu Centrair Intl Airport (NGO)', note: 'TPE ✈️ NGO (2h50m) | Terminal 2', lat: 34.8583, lng: 136.8053 },
-                'CI154': { time: '07:30', title: '中華航空 CI154', loc: 'Chubu Centrair Intl Airport (NGO)', note: 'TPE ✈️ NGO (2h50m) | Terminal 1', lat: 34.8583, lng: 136.8053 },
-                'IT206': { time: '09:00', title: '台灣虎航 IT206', loc: 'Chubu Centrair Intl Airport (NGO)', note: 'TPE ✈️ NGO (2h50m) | Terminal 2', lat: 34.8583, lng: 136.8053 },
-                // NGO -> TPE
-                'JX839': { time: '18:30', title: '星宇航空 JX839', loc: 'Chubu Centrair Intl Airport (NGO)', note: 'NGO ✈️ TPE (3h10m) | Check-in 2hrs prior', lat: 34.8583, lng: 136.8053 },
-                'CI155': { time: '12:20', title: '中華航空 CI155', loc: 'Chubu Centrair Intl Airport (NGO)', note: 'NGO ✈️ TPE (3h10m)', lat: 34.8583, lng: 136.8053 },
-                'IT207': { time: '13:45', title: '台灣虎航 IT207', loc: 'Chubu Centrair Intl Airport (NGO)', note: 'NGO ✈️ TPE (3h10m)', lat: 34.8583, lng: 136.8053 },
-            };
-
-            const updateFlight = (type, codeInput) => {
-                const code = codeInput.toUpperCase().trim();
-                const flight = flightDB[code];
-                
-                if (flight) {
-                    const target = type === 'arrival' ? arrivalFlight : departureFlight;
-                    target.value = {
-                        code: code,
-                        time: flight.time,
-                        title: flight.title,
-                        location: flight.loc,
-                        note: flight.note,
-                        lat: flight.lat,
-                        lng: flight.lng
-                    };
-                    saveToCloud();
-                } else {
-                    alert('找不到此航班代號，請確認輸入正確 (例如 JX838)。');
-                }
-            };
+            // Standard Event Form State
+            const form = ref({ id: null, time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null });
 
             // --- Default Data ---
             const defaultStartDate = new Date().toISOString().split('T')[0];
@@ -676,6 +700,54 @@
                         ]
                     }
                 ]
+            };
+
+            // --- Flight Logic (Manual) ---
+            const openFlightModal = (type) => {
+                isFlightMode.value = true;
+                editingFlightType.value = type;
+                
+                // Pre-fill form if data exists
+                const target = type === 'arrival' ? arrivalFlight.value : departureFlight.value;
+                flightForm.value = { ...target };
+                
+                showModal.value = true;
+            };
+
+            const saveFlight = () => {
+                const target = editingFlightType.value === 'arrival' ? arrivalFlight : departureFlight;
+                
+                target.value = {
+                    ...target.value, // keep lat/lng if existing
+                    code: flightForm.value.code.toUpperCase(),
+                    title: flightForm.value.title,
+                    time: flightForm.value.time,
+                    location: flightForm.value.location,
+                    note: flightForm.value.note
+                };
+                
+                // Try to geocode if location changed (simple check)
+                if (flightForm.value.location) {
+                    // This is async but we don't await it to close modal fast
+                    fetchCoordinates(flightForm.value.location).then(coords => {
+                        if(coords) {
+                            target.value.lat = coords.lat;
+                            target.value.lng = coords.lng;
+                            saveToCloud(); // Save again with coords
+                        }
+                    });
+                }
+
+                saveToCloud();
+                closeModal();
+            };
+
+            const clearFlightData = () => {
+                if(!confirm('確定清除此航班資訊嗎？')) return;
+                const target = editingFlightType.value === 'arrival' ? arrivalFlight : departureFlight;
+                target.value = { code: '', time: '', title: '', location: '', note: '', lat: null, lng: null };
+                saveToCloud();
+                closeModal();
             };
 
             // --- Shopping List Logic ---
@@ -947,8 +1019,18 @@
 
             // --- CRUD ---
             const manualAddDay = () => { days.value.push({ date: `Day ${days.value.length + 1}`, events: [] }); currentDayIndex.value = days.value.length - 1; calculateEndDateFromDays(); saveToCloud(); setTimeout(() => scrollToDay(days.value.length - 1), 100); };
-            const openAddModal = () => { isEditing.value = false; form.value = { id: Date.now(), time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null }; showModal.value = true; };
-            const editEvent = (event) => { isEditing.value = true; form.value = { ...event }; showModal.value = true; };
+            const openAddModal = () => { 
+                isFlightMode.value = false;
+                isEditing.value = false; 
+                form.value = { id: Date.now(), time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null }; 
+                showModal.value = true; 
+            };
+            const editEvent = (event) => { 
+                isFlightMode.value = false;
+                isEditing.value = true; 
+                form.value = { ...event }; 
+                showModal.value = true; 
+            };
             const closeModal = () => showModal.value = false;
             
             const saveEvent = () => {
@@ -979,7 +1061,7 @@
             return {
                 days, currentDayIndex, showModal, isEditing, form, startDate, endDate, handleDateChange, manualAddDay, tripTitle,
                 weatherData, status, viewMode, isScrolled, isMapLoading, currentTab, tabs, xuanList, chiauList, newItemXuan, newItemChiau,
-                arrivalFlight, departureFlight, tempFlightCodeArrival, tempFlightCodeDeparture, updateFlight,
+                arrivalFlight, departureFlight, flightForm, openFlightModal, saveFlight, clearFlightData, isFlightMode, editingFlightType,
                 currentDayEvents: computed(() => (days.value[currentDayIndex.value]?.events || [])),
                 sortedEvents: computed(() => [...(days.value[currentDayIndex.value]?.events || [])].sort((a, b) => a.time.localeCompare(b.time))),
                 getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, deleteEvent, resetData, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem, deleteShoppingItem
@@ -987,6 +1069,3 @@
         }
     }).mount('#app');
 </script>
-
-</body>
-</html>
