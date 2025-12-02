@@ -3,10 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- 設定 Web App 模式，隱藏瀏覽器介面 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#fafaf9">
+    
     <title>NagoyaGo - 日系極簡版</title>
-     <!-- Apple Touch Icon (iPhone 主畫面圖示) -->
+    
+    <!-- Apple Touch Icon (iPhone 主畫面圖示) -->
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/zxuan-c/tour_app/refs/heads/main/icon.jpg">
     <link rel="icon" href="https://raw.githubusercontent.com/zxuan-c/tour_app/refs/heads/main/icon.jpg">
+    
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
@@ -310,27 +317,42 @@
                                 <div class="absolute left-0 top-3 w-10 h-10 flex items-center justify-center z-10">
                                     <div class="w-2.5 h-2.5 rounded-full ring-4 ring-washi transition-colors duration-300" :class="getTypeColor(event.type, 'dot')"></div>
                                 </div>
-                                <!-- Card -->
-                                <div class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-md" @click="editEvent(event)">
+                                <!-- Card with Dynamic Height based on Duration -->
+                                <div 
+                                    class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-md flex flex-col"
+                                    :style="{ minHeight: calculateCardHeight(event) + 'px' }"
+                                    @click="editEvent(event)"
+                                >
                                     <div class="flex justify-between items-start mb-3">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs font-bold font-mono tracking-tight" :class="getTypeColor(event.type, 'text')">{{ event.time }}</span>
+                                        <div class="flex items-center gap-3">
+                                            <!-- Start - End Time Display -->
+                                            <span class="text-xl font-black font-mono tracking-tighter" :class="getTypeColor(event.type, 'text')">
+                                                {{ event.time }}<span v-if="event.endTime" class="text-base font-bold text-stone-400 ml-1">- {{ event.endTime }}</span>
+                                            </span>
                                             <span class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide bg-stone-50 text-stone-400 uppercase">{{ getTypeName(event.type) }}</span>
                                         </div>
-                                        <a :href="getMapUrl(event.location)" target="_blank" @click.stop class="w-8 h-8 flex items-center justify-center rounded-full bg-stone-50 text-stone-300 hover:bg-lake-50 hover:text-lake-400 transition-colors">
+                                        <a :href="getMapUrl(event.location)" target="_blank" @click.stop class="w-8 h-8 flex items-center justify-center rounded-full bg-stone-50 text-stone-300 hover:bg-lake-50 hover:text-lake-400 transition-colors flex-shrink-0">
                                             <i class="fa-solid fa-location-arrow text-xs"></i>
                                         </a>
                                     </div>
-                                    <h3 class="text-lg font-bold text-sumi mb-1 leading-snug">{{ event.title }}</h3>
-                                    <div class="flex items-center text-stone-400 text-xs mb-3 font-normal">
+                                    
+                                    <h3 class="text-lg font-bold text-sumi mb-1 leading-snug flex-shrink-0">{{ event.title }}</h3>
+                                    
+                                    <div class="flex items-center text-stone-400 text-xs mb-3 font-normal flex-shrink-0">
                                         <i class="fa-solid fa-location-dot mr-1.5 opacity-50"></i>
                                         <span class="truncate">{{ event.location }}</span>
                                     </div>
+
+                                    <!-- Flexible Note Area -->
+                                    <p v-if="event.note" class="text-stone-400 text-xs mt-auto pt-3 border-t border-stone-50/80 leading-relaxed font-normal">
+                                        {{ event.note }}
+                                    </p>
+
+                                    <!-- Weather Badge -->
                                     <div v-if="getEventWeather(event.time)" class="absolute bottom-4 right-4 flex items-center text-xs text-lake-400 bg-lake-50/50 px-2 py-1 rounded-lg backdrop-blur-sm">
                                         <i :class="getWeatherIcon(getEventWeather(event.time).code)" class="mr-1.5"></i>
                                         <span>{{ getEventWeather(event.time).temp }}°</span>
                                     </div>
-                                    <p v-if="event.note" class="text-stone-400 text-xs mt-3 pt-3 border-t border-stone-50/80 line-clamp-2 leading-relaxed font-normal">{{ event.note }}</p>
                                 </div>
                             </div>
                         </transition-group>
@@ -501,7 +523,7 @@
             </div>
         </transition>
 
-        <!-- Edit/Add Event Modal (Standard) -->
+        <!-- Edit/Add Event Modal (Updated with End Time) -->
         <transition name="slide-up">
             <div v-if="showModal && !isFlightMode" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
                 <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto transition-opacity"></div>
@@ -513,36 +535,54 @@
                     </div>
 
                     <form @submit.prevent="saveEvent" class="space-y-6">
-                        <div class="grid grid-cols-5 gap-4">
-                            <div class="col-span-2">
-                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Time</label>
-                                <!-- Custom Time Picker (24H, No AM/PM) -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Start Time -->
+                            <div>
+                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Start Time</label>
                                 <div class="flex gap-2">
                                     <div class="relative flex-1">
-                                        <select v-model="form.hour" required class="w-full bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                        <select v-model="form.hour" required class="w-full bg-stone-50 border-none rounded-xl px-1 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
                                             <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
                                         </select>
                                     </div>
                                     <span class="py-3 text-stone-300">:</span>
                                     <div class="relative flex-1">
-                                        <select v-model="form.minute" required class="w-full bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                        <select v-model="form.minute" required class="w-full bg-stone-50 border-none rounded-xl px-1 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
                                             <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-span-3">
-                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Category</label>
-                                <div class="relative">
-                                    <select v-model="form.type" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm appearance-none focus:ring-2 focus:ring-lake-200 transition-shadow">
-                                        <option value="sightseeing">景點 Sightseeing</option>
-                                        <option value="food">美食 Food</option>
-                                        <option value="shopping">購物 Shopping</option>
-                                        <option value="transport">交通 Transport</option>
-                                        <option value="hotel">住宿 Hotel</option>
-                                    </select>
-                                    <i class="fa-solid fa-chevron-down absolute right-4 top-3.5 text-stone-300 text-xs pointer-events-none"></i>
+                            <!-- End Time -->
+                            <div>
+                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">End Time</label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <select v-model="form.endHour" required class="w-full bg-stone-50 border-none rounded-xl px-1 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                            <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
+                                        </select>
+                                    </div>
+                                    <span class="py-3 text-stone-300">:</span>
+                                    <div class="relative flex-1">
+                                        <select v-model="form.endMinute" required class="w-full bg-stone-50 border-none rounded-xl px-1 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                            <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
+                                        </select>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Category</label>
+                            <div class="relative">
+                                <select v-model="form.type" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm appearance-none focus:ring-2 focus:ring-lake-200 transition-shadow">
+                                    <option value="sightseeing">景點 Sightseeing</option>
+                                    <option value="food">美食 Food</option>
+                                    <option value="shopping">購物 Shopping</option>
+                                    <option value="transport">交通 Transport</option>
+                                    <option value="hotel">住宿 Hotel</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-4 top-3.5 text-stone-300 text-xs pointer-events-none"></i>
                             </div>
                         </div>
 
@@ -557,9 +597,6 @@
                                 <input v-model="form.location" type="text" placeholder="Where is it?" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 pl-10 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow">
                                 <i class="fa-solid fa-map-pin absolute left-4 top-3.5 text-stone-300 text-sm"></i>
                             </div>
-                            <p class="text-[10px] text-stone-400 mt-1 ml-1" v-if="isEditing && !form.lat">
-                                * 輸入地點名稱後，系統將嘗試在地圖模式下自動定位。
-                            </p>
                         </div>
 
                         <div>
@@ -703,8 +740,22 @@
             let tripChannel = null;
             const TRIP_ID = 'nagoya_main'; 
 
-            // Standard Event Form State
-            const form = ref({ id: null, time: '09:00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null, hour: '09', minute: '00' });
+            // Standard Event Form State (Added endHour/endMinute)
+            const form = ref({ 
+                id: null, 
+                time: '09:00', 
+                endTime: '10:00', 
+                hour: '09', 
+                minute: '00', 
+                endHour: '10', 
+                endMinute: '00',
+                type: 'sightseeing', 
+                title: '', 
+                location: '', 
+                note: '', 
+                lat: null, 
+                lng: null 
+            });
 
             // --- Default Data ---
             const defaultStartDate = new Date().toISOString().split('T')[0];
@@ -712,6 +763,7 @@
             tomorrow.setDate(tomorrow.getDate() + 1);
             const defaultEndDate = tomorrow.toISOString().split('T')[0];
 
+            // Default with End Times
             const defaultData = {
                 tripTitle: 'Nagoya.Go',
                 startDate: defaultStartDate,
@@ -724,14 +776,14 @@
                     {
                         date: 'Day 1',
                         events: [
-                            { id: 2, time: '12:00', type: 'food', title: '矢場炸豬排', location: 'Yabaton Nagoya Station Esca', note: '必點鐵板味噌豬排', lat: 35.1709, lng: 136.8815 },
-                            { id: 3, time: '14:30', type: 'sightseeing', title: '名古屋城', location: 'Nagoya Castle', note: '參觀本丸御殿，看金鯱', lat: 35.1838, lng: 136.9003 },
+                            { id: 2, time: '12:00', endTime: '13:30', type: 'food', title: '矢場炸豬排', location: 'Yabaton Nagoya Station Esca', note: '必點鐵板味噌豬排', lat: 35.1709, lng: 136.8815 },
+                            { id: 3, time: '14:30', endTime: '17:00', type: 'sightseeing', title: '名古屋城', location: 'Nagoya Castle', note: '參觀本丸御殿，看金鯱', lat: 35.1838, lng: 136.9003 },
                         ]
                     },
                     {
                         date: 'Day 2',
                         events: [
-                            { id: 5, time: '09:00', type: 'sightseeing', title: '熱田神宮', location: 'Atsuta Jingu', note: '日本三大神宮之一', lat: 35.1256, lng: 136.9088 },
+                            { id: 5, time: '09:00', endTime: '11:00', type: 'sightseeing', title: '熱田神宮', location: 'Atsuta Jingu', note: '日本三大神宮之一', lat: 35.1256, lng: 136.9088 },
                         ]
                     }
                 ]
@@ -1079,20 +1131,46 @@
             const getTypeName = (type) => ({ sightseeing: '景點', food: '美食', shopping: '購物', transport: '交通', hotel: '住宿' }[type] || '其他');
             const getMapUrl = (loc) => loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '#';
 
+            // --- Calculation Helper ---
+            const calculateCardHeight = (event) => {
+                if (!event.time || !event.endTime) return 100; // default minimal height
+                
+                const [startH, startM] = event.time.split(':').map(Number);
+                const [endH, endM] = event.endTime.split(':').map(Number);
+                
+                let duration = (endH * 60 + endM) - (startH * 60 + startM);
+                if (duration < 0) duration += 24 * 60; // handle crossing midnight (simple)
+
+                // 1 minute = 1.5px, min-height 100px
+                const pixelHeight = duration * 1.5;
+                return Math.max(120, pixelHeight); // Minimum height for content visibility
+            };
+
             // --- CRUD ---
             const manualAddDay = () => { days.value.push({ date: `Day ${days.value.length + 1}`, events: [] }); currentDayIndex.value = days.value.length - 1; calculateEndDateFromDays(); saveToCloud(); setTimeout(() => scrollToDay(days.value.length - 1), 100); };
             const openAddModal = () => { 
                 isFlightMode.value = false;
                 isEditing.value = false; 
                 // Set default hour/minute
-                form.value = { id: Date.now(), time: '09:00', hour: '09', minute: '00', type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null }; 
+                form.value = { 
+                    id: Date.now(), 
+                    time: '09:00', endTime: '10:00', 
+                    hour: '09', minute: '00', 
+                    endHour: '10', endMinute: '00',
+                    type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null 
+                }; 
                 showModal.value = true; 
             };
             const editEvent = (event) => { 
                 isFlightMode.value = false;
                 isEditing.value = true; 
-                const [h, m] = event.time.split(':');
-                form.value = { ...event, hour: h, minute: m }; 
+                const [h, m] = (event.time || '09:00').split(':');
+                const [eh, em] = (event.endTime || '10:00').split(':');
+                form.value = { 
+                    ...event, 
+                    hour: h, minute: m,
+                    endHour: eh, endMinute: em 
+                }; 
                 showModal.value = true; 
             };
             const closeModal = () => showModal.value = false;
@@ -1100,6 +1178,7 @@
             const saveEvent = () => {
                 // Combine hour/minute
                 form.value.time = `${form.value.hour}:${form.value.minute}`;
+                form.value.endTime = `${form.value.endHour}:${form.value.endMinute}`;
                 
                 const currentEvents = days.value[currentDayIndex.value].events;
                 if (isEditing.value) {
@@ -1121,7 +1200,7 @@
                 confirmState, confirmAction, executeConfirm,
                 currentDayEvents: computed(() => (days.value[currentDayIndex.value]?.events || [])),
                 sortedEvents: computed(() => [...(days.value[currentDayIndex.value]?.events || [])].sort((a, b) => a.time.localeCompare(b.time))),
-                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem
+                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem, calculateCardHeight
             };
         }
     }).mount('#app');
