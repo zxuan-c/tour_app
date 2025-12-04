@@ -326,8 +326,8 @@
                                     <div class="flex justify-between items-start mb-3">
                                         <div class="flex items-center gap-3">
                                             <!-- Start - End Time Display -->
-                                            <span class="text-xl font-black font-mono tracking-tighter" :class="getTypeColor(event.type, 'text')">
-                                                {{ event.time }}<span v-if="event.endTime" class="text-base font-bold text-stone-400 ml-1">- {{ event.endTime }}</span>
+                                            <span class="text-lg font-medium font-mono" :class="getTypeColor(event.type, 'text')">
+                                                {{ event.time }}<span v-if="event.endTime"> - {{ event.endTime }}</span>
                                             </span>
                                             <span class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide bg-stone-50 text-stone-400 uppercase">{{ getTypeName(event.type) }}</span>
                                         </div>
@@ -523,7 +523,7 @@
             </div>
         </transition>
 
-        <!-- Edit/Add Event Modal (Updated with End Time) -->
+        <!-- Edit/Add Event Modal (Standard) -->
         <transition name="slide-up">
             <div v-if="showModal && !isFlightMode" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
                 <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto transition-opacity"></div>
@@ -539,50 +539,53 @@
                             <!-- Start Time -->
                             <div>
                                 <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Start Time</label>
+                                <!-- Custom Time Picker (24H, No AM/PM) -->
                                 <div class="flex gap-2">
                                     <div class="relative flex-1">
-                                        <select v-model="form.hour" required class="w-full bg-stone-50 border-none rounded-xl px-1 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                        <select v-model="form.hour" required class="w-full bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
                                             <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
                                         </select>
                                     </div>
                                     <span class="py-3 text-stone-300">:</span>
                                     <div class="relative flex-1">
-                                        <select v-model="form.minute" required class="w-full bg-stone-50 border-none rounded-xl px-1 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                        <select v-model="form.minute" required class="w-full bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
                                             <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-span-3">
+                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Category</label>
+                                <div class="relative">
+                                    <select v-model="form.type" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm appearance-none focus:ring-2 focus:ring-lake-200 transition-shadow">
+                                        <option value="sightseeing">景點 Sightseeing</option>
+                                        <option value="food">美食 Food</option>
+                                        <option value="shopping">購物 Shopping</option>
+                                        <option value="transport">交通 Transport</option>
+                                        <option value="hotel">住宿 Hotel</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down absolute right-4 top-3.5 text-stone-300 text-xs pointer-events-none"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
                             <!-- End Time -->
                             <div>
                                 <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">End Time</label>
                                 <div class="flex gap-2">
                                     <div class="relative flex-1">
-                                        <select v-model="form.endHour" required class="w-full bg-stone-50 border-none rounded-xl px-1 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                        <select v-model="form.endHour" required class="w-full bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
                                             <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
                                         </select>
                                     </div>
                                     <span class="py-3 text-stone-300">:</span>
                                     <div class="relative flex-1">
-                                        <select v-model="form.endMinute" required class="w-full bg-stone-50 border-none rounded-xl px-1 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                        <select v-model="form.endMinute" required class="w-full bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
                                             <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
                                         </select>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">Category</label>
-                            <div class="relative">
-                                <select v-model="form.type" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm appearance-none focus:ring-2 focus:ring-lake-200 transition-shadow">
-                                    <option value="sightseeing">景點 Sightseeing</option>
-                                    <option value="food">美食 Food</option>
-                                    <option value="shopping">購物 Shopping</option>
-                                    <option value="transport">交通 Transport</option>
-                                    <option value="hotel">住宿 Hotel</option>
-                                </select>
-                                <i class="fa-solid fa-chevron-down absolute right-4 top-3.5 text-stone-300 text-xs pointer-events-none"></i>
                             </div>
                         </div>
 
@@ -597,6 +600,9 @@
                                 <input v-model="form.location" type="text" placeholder="Where is it?" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 pl-10 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow">
                                 <i class="fa-solid fa-map-pin absolute left-4 top-3.5 text-stone-300 text-sm"></i>
                             </div>
+                            <p class="text-[10px] text-stone-400 mt-1 ml-1" v-if="isEditing && !form.lat">
+                                * 輸入地點名稱後，系統將嘗試在地圖模式下自動定位。
+                            </p>
                         </div>
 
                         <div>
@@ -1205,6 +1211,3 @@
         }
     }).mount('#app');
 </script>
-
-</body>
-</html>
