@@ -317,38 +317,55 @@
                                 <div class="absolute left-0 top-3 w-10 h-10 flex items-center justify-center z-10">
                                     <div class="w-2.5 h-2.5 rounded-full ring-4 ring-washi transition-colors duration-300" :class="getTypeColor(event.type, 'dot')"></div>
                                 </div>
-                                <!-- Card with fixed minimum height -->
+                                <!-- Card with Header Strip and Duration -->
                                 <div 
-                                    class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-md flex flex-col min-h-[120px]"
+                                    class="bg-white shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-md rounded-[24px] flex flex-col"
                                     @click="editEvent(event)"
                                 >
-                                    <div class="flex justify-between items-start mb-3">
-                                        <div class="flex items-center gap-3">
-                                            <!-- Start - End Time Display -->
-                                            <span class="text-lg font-medium font-mono" :class="getTypeColor(event.type, 'text')">
-                                                {{ event.time }}<span v-if="event.endTime"> - {{ event.endTime }}</span>
+                                    <!-- Colored Header Section (Time and Type) - Adjusted Padding and Font Size -->
+                                    <div class="py-2 px-4 rounded-t-[24px] flex justify-between items-center text-white" :class="getTypeColor(event.type, 'header')">
+                                        <!-- Time Range -->
+                                        <span class="text-lg font-bold font-mono tracking-tight">
+                                            {{ event.time }}<span v-if="event.endTime"> - {{ event.endTime }}</span>
+                                        </span>
+                                        <!-- Type Label -->
+                                        <span class="text-xs font-bold tracking-widest">{{ getTypeName(event.type) }}</span>
+                                    </div>
+                                    
+                                    <!-- Main Content Area -->
+                                    <div class="flex-1 p-5 pt-4 flex flex-col justify-start"> 
+                                        
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h3 class="text-xl font-bold text-sumi leading-snug flex-shrink-0 mr-4 max-w-[70%]">
+                                                {{ event.title }}
+                                            </h3>
+                                            <!-- Duration next to Title -->
+                                            <span v-if="event.endTime" class="text-sm font-medium text-stone-400 whitespace-nowrap pt-1">
+                                                {{ formatDuration(event.time, event.endTime) }}
                                             </span>
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide bg-stone-50 text-stone-400 uppercase">{{ getTypeName(event.type) }}</span>
                                         </div>
-                                        <a :href="getMapUrl(event.location)" target="_blank" @click.stop class="w-8 h-8 flex items-center justify-center rounded-full bg-stone-50 text-stone-300 hover:bg-lake-50 hover:text-lake-400 transition-colors flex-shrink-0">
-                                            <i class="fa-solid fa-location-arrow text-xs"></i>
-                                        </a>
-                                    </div>
-                                    
-                                    <h3 class="text-lg font-bold text-sumi mb-1 leading-snug flex-shrink-0">{{ event.title }}</h3>
-                                    
-                                    <div class="flex items-center text-stone-400 text-xs mb-3 font-normal flex-shrink-0">
-                                        <i class="fa-solid fa-location-dot mr-1.5 opacity-50"></i>
-                                        <span class="truncate">{{ event.location }}</span>
+
+                                        <!-- Location and Map Link (grouped) -->
+                                        <div class="flex items-center justify-between text-stone-400 text-xs font-normal mt-1 mb-2">
+                                            <div class="flex items-center max-w-[80%]">
+                                                <i class="fa-solid fa-location-dot mr-1.5 opacity-50 flex-shrink-0"></i>
+                                                <span class="truncate">{{ event.location }}</span>
+                                            </div>
+                                            
+                                            <!-- Map Link button -->
+                                            <a :href="getMapUrl(event.location)" target="_blank" @click.stop class="w-8 h-8 flex items-center justify-center rounded-full bg-stone-50 text-stone-300 hover:bg-lake-50 hover:text-lake-400 transition-colors flex-shrink-0">
+                                                <i class="fa-solid fa-location-arrow text-xs"></i>
+                                            </a>
+                                        </div>
+
+                                        <!-- Note -->
+                                        <p v-if="event.note" class="text-stone-400 text-xs mt-3 pt-3 border-t border-stone-50/80 leading-relaxed font-normal">
+                                            {{ event.note }}
+                                        </p>
                                     </div>
 
-                                    <!-- Flexible Note Area -->
-                                    <p v-if="event.note" class="text-stone-400 text-xs mt-auto pt-3 border-t border-stone-50/80 leading-relaxed font-normal">
-                                        {{ event.note }}
-                                    </p>
-
-                                    <!-- Weather Badge -->
-                                    <div v-if="getEventWeather(event.time)" class="absolute bottom-4 right-4 flex items-center text-xs text-lake-400 bg-lake-50/50 px-2 py-1 rounded-lg backdrop-blur-sm">
+                                    <!-- Weather Badge (Placed relative to the overall card container) -->
+                                    <div v-if="getEventWeather(event.time)" class="absolute bottom-4 right-4 flex items-center text-xs text-lake-400 bg-lake-50/50 px-2 py-1 rounded-lg backdrop-blur-sm pointer-events-none">
                                         <i :class="getWeatherIcon(getEventWeather(event.time).code)" class="mr-1.5"></i>
                                         <span>{{ getEventWeather(event.time).temp }}°</span>
                                     </div>
@@ -1132,13 +1149,49 @@
             };
 
             const getTypeColor = (type, mode) => {
-                const colors = { sightseeing: { dot: 'bg-lake-400', text: 'text-lake-500' }, food: { dot: 'bg-orange-300', text: 'text-orange-400' }, shopping: { dot: 'bg-pink-300', text: 'text-pink-400' }, transport: { dot: 'bg-stone-300', text: 'text-stone-400' }, hotel: { dot: 'bg-indigo-300', text: 'text-indigo-400' } };
+                const colors = { 
+                    sightseeing: { dot: 'bg-lake-400', text: 'text-lake-500', header: 'bg-lake-400' }, 
+                    food: { dot: 'bg-orange-300', text: 'text-orange-400', header: 'bg-orange-400' }, 
+                    shopping: { dot: 'bg-pink-300', text: 'text-pink-400', header: 'bg-pink-400' }, 
+                    transport: { dot: 'bg-stone-300', text: 'text-stone-400', header: 'bg-stone-400' }, 
+                    hotel: { dot: 'bg-indigo-300', text: 'text-indigo-400', header: 'bg-indigo-400' } 
+                };
                 return (colors[type] || colors['sightseeing'])[mode];
             };
             
             const getTypeName = (type) => ({ sightseeing: '景點', food: '美食', shopping: '購物', transport: '交通', hotel: '住宿' }[type] || '其他');
             const getMapUrl = (loc) => loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '#';
 
+            // --- Calculation Helper (New) ---
+            const formatDuration = (startTime, endTime) => {
+                if (!startTime || !endTime) return '';
+
+                const [startH, startM] = startTime.split(':').map(Number);
+                const [endH, endM] = endTime.split(':').map(Number);
+
+                let startMinutes = startH * 60 + startM;
+                let endMinutes = endH * 60 + endM;
+
+                // Handle crossing midnight (e.g., 23:00 to 01:00)
+                if (endMinutes < startMinutes) {
+                    endMinutes += 24 * 60;
+                }
+
+                const totalMinutes = endMinutes - startMinutes;
+                if (totalMinutes <= 0) return '';
+
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+
+                let durationString = '';
+                if (hours > 0) {
+                    durationString += `${hours}hr `;
+                }
+                if (minutes > 0) {
+                    durationString += `${minutes}min`;
+                }
+                return durationString.trim();
+            };
             // --- CRUD ---
             const manualAddDay = () => { days.value.push({ date: `Day ${days.value.length + 1}`, events: [] }); currentDayIndex.value = days.value.length - 1; calculateEndDateFromDays(); saveToCloud(); setTimeout(() => scrollToDay(days.value.length - 1), 100); };
             const openAddModal = () => { 
@@ -1193,7 +1246,7 @@
                 confirmState, confirmAction, executeConfirm,
                 currentDayEvents: computed(() => (days.value[currentDayIndex.value]?.events || [])),
                 sortedEvents: computed(() => [...(days.value[currentDayIndex.value]?.events || [])].sort((a, b) => a.time.localeCompare(b.time))),
-                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem
+                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem, formatDuration
             };
         }
     }).mount('#app');
