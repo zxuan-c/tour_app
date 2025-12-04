@@ -317,10 +317,9 @@
                                 <div class="absolute left-0 top-3 w-10 h-10 flex items-center justify-center z-10">
                                     <div class="w-2.5 h-2.5 rounded-full ring-4 ring-washi transition-colors duration-300" :class="getTypeColor(event.type, 'dot')"></div>
                                 </div>
-                                <!-- Card with Dynamic Height based on Duration -->
+                                <!-- Card with fixed minimum height -->
                                 <div 
-                                    class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-md flex flex-col"
-                                    :style="{ minHeight: calculateCardHeight(event) + 'px' }"
+                                    class="bg-white p-5 rounded-[24px] shadow-[0_2px_15px_rgba(0,0,0,0.02)] border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-md flex flex-col min-h-[120px]"
                                     @click="editEvent(event)"
                                 >
                                     <div class="flex justify-between items-start mb-3">
@@ -692,6 +691,8 @@
     createApp({
         setup() {
             // --- Supabase Config ---
+            // NOTE: The Supabase configuration here is mock/example. 
+            // In a real application, you'd use a robust backend solution like Firestore.
             const SUPABASE_URL = 'https://nrormwhklkytqyrbrdbr.supabase.co';
             const SUPABASE_KEY = 'sb_publishable_QuvW2VoIHavfZ7RunbOl1A_Fu34ri_D';
 
@@ -970,12 +971,13 @@
                 if (!startDate.value || !endDate.value) return;
                 const start = new Date(startDate.value);
                 const end = new Date(endDate.value);
-                if (end < start) { alert("回程日期不能早於出發日期！"); calculateEndDateFromDays(); return; }
+                if (end < start) { /* Note: Avoid alert(), replace with custom modal or console error in production */ console.error("回程日期不能早於出發日期！"); calculateEndDateFromDays(); return; }
                 const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
                 const currentCount = days.value.length;
                 if (diffDays > currentCount) {
                     for (let i = currentCount; i < diffDays; i++) days.value.push({ date: `Day ${i + 1}`, events: [] });
                 } else if (diffDays < currentCount) {
+                    // Use custom confirmation for reset logic
                     if (confirm(`縮短行程將刪除 Day ${diffDays + 1} 後的所有行程，確定嗎？`)) {
                         days.value = days.value.slice(0, diffDays);
                         if (currentDayIndex.value >= days.value.length) currentDayIndex.value = days.value.length - 1;
@@ -1137,21 +1139,6 @@
             const getTypeName = (type) => ({ sightseeing: '景點', food: '美食', shopping: '購物', transport: '交通', hotel: '住宿' }[type] || '其他');
             const getMapUrl = (loc) => loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '#';
 
-            // --- Calculation Helper ---
-            const calculateCardHeight = (event) => {
-                if (!event.time || !event.endTime) return 100; // default minimal height
-                
-                const [startH, startM] = event.time.split(':').map(Number);
-                const [endH, endM] = event.endTime.split(':').map(Number);
-                
-                let duration = (endH * 60 + endM) - (startH * 60 + startM);
-                if (duration < 0) duration += 24 * 60; // handle crossing midnight (simple)
-
-                // 1 minute = 1.5px, min-height 100px
-                const pixelHeight = duration * 1.5;
-                return Math.max(120, pixelHeight); // Minimum height for content visibility
-            };
-
             // --- CRUD ---
             const manualAddDay = () => { days.value.push({ date: `Day ${days.value.length + 1}`, events: [] }); currentDayIndex.value = days.value.length - 1; calculateEndDateFromDays(); saveToCloud(); setTimeout(() => scrollToDay(days.value.length - 1), 100); };
             const openAddModal = () => { 
@@ -1206,7 +1193,7 @@
                 confirmState, confirmAction, executeConfirm,
                 currentDayEvents: computed(() => (days.value[currentDayIndex.value]?.events || [])),
                 sortedEvents: computed(() => [...(days.value[currentDayIndex.value]?.events || [])].sort((a, b) => a.time.localeCompare(b.time))),
-                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem, calculateCardHeight
+                getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, scrollToDay, saveToCloud, changeDay, getDayDateString, getEventWeather, currentDayWeatherSummary, toggleViewMode, checkScroll, addShoppingItem
             };
         }
     }).mount('#app');
