@@ -110,6 +110,26 @@
         .flight-card-bg {
             background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
         }
+
+        /* Long press scale effect */
+        .shopping-item {
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        .shopping-item:active {
+            transform: scale(0.98);
+            background-color: #f5f5f4;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .slide-up-animation {
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
     </style>
     
     <script>
@@ -162,7 +182,7 @@
                     <p class="text-xs text-stone-400 font-normal mt-0.5 tracking-widest uppercase">JAPAN TRAVEL PLANNER</p>
                 </div>
                 
-                <!-- Action Buttons (Only show in Itinerary mode) -->
+                <!-- Action Buttons -->
                 <div class="flex gap-2" v-if="currentTab === 'itinerary'">
                     <button @click="toggleViewMode" class="w-20 h-8 rounded-full bg-white border border-stone-100 text-stone-400 hover:text-lake-500 hover:border-lake-200 flex items-center justify-center transition-all shadow-sm gap-1 text-xs font-bold">
                         <i class="fa-solid" :class="viewMode === 'list' ? 'fa-map' : 'fa-list-ul'"></i>
@@ -174,7 +194,7 @@
                 </div>
             </div>
 
-            <!-- Date Range (Minimalist) -->
+            <!-- Date Range -->
             <div class="flex items-center justify-between bg-white rounded-2xl p-1 pr-4 pl-4 mb-3 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-stone-50">
                 <div class="flex flex-col">
                     <span class="text-[10px] text-lake-400 font-bold tracking-widest uppercase">Departure</span>
@@ -235,10 +255,10 @@
             
             <!-- ====== ITINERARY TAB ====== -->
             <div v-if="currentTab === 'itinerary'" class="h-full relative">
-                <!-- LIST VIEW (Added no-scrollbar) -->
+                <!-- LIST VIEW -->
                 <div v-show="viewMode === 'list'" class="absolute inset-0 overflow-y-auto p-4 pb-24 no-scrollbar" @scroll="checkScroll">
                     
-                    <!-- NEW: TODAY'S WEATHER WIDGET -->
+                    <!-- TODAY'S WEATHER WIDGET -->
                     <div class="mb-4 bg-white/60 backdrop-blur-sm border border-stone-100 rounded-2xl p-3 flex items-center justify-between shadow-sm">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-lake-50 text-lake-400 flex items-center justify-center">
@@ -252,9 +272,7 @@
                                 <p class="text-xs text-stone-300" v-else>Loading weather...</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-[10px] bg-lake-100 text-lake-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Current</span>
-                        </div>
+                        <div class="text-right text-stone-300 text-[10px] font-bold uppercase tracking-widest">Nagoya, JP</div>
                     </div>
 
                     <!-- ARRIVAL FLIGHT CARD (Only Day 1) -->
@@ -295,42 +313,23 @@
                         </div>
                     </div>
 
-                    <!-- Empty State -->
-                    <div v-if="currentDayEvents.length === 0" class="flex flex-col items-center justify-center py-20 text-stone-300">
-                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-4 animate-pulse">
-                            <i class="fa-regular fa-map text-2xl text-lake-200"></i>
-                        </div>
-                        <p class="font-normal tracking-widest text-sm">PLAN YOUR JOURNEY</p>
-                    </div>
-
                     <!-- Timeline & Events -->
-                    <div v-else class="space-y-6 relative">
+                    <div v-if="sortedEvents.length > 0" class="space-y-6 relative">
                         <div class="absolute left-[19px] top-0 bottom-0 w-px bg-stone-200/60"></div>
-
                         <transition-group name="slide-right" tag="div" class="space-y-6">
                             <div v-for="event in sortedEvents" :key="event.id" class="relative pl-10 group">
                                 <div class="absolute left-0 top-3 w-10 h-10 flex items-center justify-center z-10">
                                     <div class="w-2.5 h-2.5 rounded-full ring-4 ring-washi transition-colors duration-300" :class="getTypeColor(event.type, 'dot')"></div>
                                 </div>
-                                <div 
-                                    class="bg-white shadow-lg border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-xl rounded-[24px] flex flex-col"
-                                    @click="editEvent(event)"
-                                >
+                                <div class="bg-white shadow-lg border border-stone-50 active:scale-[0.98] transition-all duration-200 relative overflow-hidden hover:shadow-xl rounded-[24px] flex flex-col" @click="editEvent(event)">
                                     <div class="py-2 px-4 rounded-t-[24px] flex justify-between items-center text-white" :class="getTypeColor(event.type, 'header')">
-                                        <span class="text-lg font-bold font-mono tracking-tight">
-                                            {{ event.time }}<span v-if="event.endTime"> - {{ event.endTime }}</span>
-                                        </span>
+                                        <span class="text-lg font-bold font-mono tracking-tight">{{ event.time }}<span v-if="event.endTime"> - {{ event.endTime }}</span></span>
                                         <span class="text-xs font-bold tracking-widest">{{ getTypeName(event.type) }}</span>
                                     </div>
-                                    
                                     <div class="flex-1 p-5 pt-4 flex flex-col justify-start"> 
                                         <div class="flex justify-between items-start mb-2">
-                                            <h3 class="text-xl font-bold text-sumi leading-snug flex-shrink-0 mr-4 max-w-[70%]">
-                                                {{ event.title }}
-                                            </h3>
-                                            <span v-if="event.endTime" class="text-sm font-medium text-stone-400 whitespace-nowrap pt-1">
-                                                {{ formatDuration(event.time, event.endTime) }}
-                                            </span>
+                                            <h3 class="text-xl font-bold text-sumi leading-snug flex-shrink-0 mr-4 max-w-[70%]">{{ event.title }}</h3>
+                                            <span v-if="event.endTime" class="text-sm font-medium text-stone-400 whitespace-nowrap pt-1">{{ formatDuration(event.time, event.endTime) }}</span>
                                         </div>
                                         <div class="flex items-center justify-between text-stone-400 text-xs font-normal mt-1 mb-2">
                                             <div class="flex items-center max-w-[80%]">
@@ -341,11 +340,8 @@
                                                 <i class="fa-solid fa-location-arrow text-xs"></i>
                                             </a>
                                         </div>
-                                        <p v-if="event.note" class="text-stone-400 text-xs mt-3 pt-3 border-t border-stone-50/80 leading-relaxed font-normal">
-                                            {{ event.note }}
-                                        </p>
+                                        <p v-if="event.note" class="text-stone-400 text-xs mt-3 pt-3 border-t border-stone-50/80 leading-relaxed font-normal">{{ event.note }}</p>
                                     </div>
-
                                     <div v-if="getEventWeather(event.time)" class="absolute bottom-4 right-4 flex items-center text-xs text-lake-400 bg-lake-50/50 px-2 py-1 rounded-lg backdrop-blur-sm pointer-events-none">
                                         <i :class="getWeatherIcon(getEventWeather(event.time).code)" class="mr-1.5"></i>
                                         <span>{{ getEventWeather(event.time).temp }}°</span>
@@ -353,6 +349,14 @@
                                 </div>
                             </div>
                         </transition-group>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div v-else class="flex flex-col items-center justify-center py-20 text-stone-300">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-4 animate-pulse">
+                            <i class="fa-regular fa-map text-2xl text-lake-200"></i>
+                        </div>
+                        <p class="font-normal tracking-widest text-sm uppercase">Plan your journey</p>
                     </div>
 
                     <!-- DEPARTURE FLIGHT CARD (Only Last Day) -->
@@ -397,16 +401,6 @@
                 <!-- MAP VIEW -->
                 <div v-show="viewMode === 'map'" class="absolute inset-0 bg-stone-100">
                     <div id="map-container"></div>
-                    <div v-if="isMapLoading" class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-2 rounded-xl shadow-lg z-[1000] flex items-center gap-2 text-xs font-bold text-lake-500">
-                        <div class="spinner w-3 h-3 border-t-lake-500"></div>
-                        <span>Locating...</span>
-                    </div>
-                    <div v-if="currentDayEvents.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
-                        <div class="bg-white/80 backdrop-blur px-6 py-4 rounded-2xl shadow-xl text-center">
-                            <p class="text-stone-500 font-bold">No locations yet</p>
-                            <p class="text-xs text-stone-400">Switch to list to add events</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -421,38 +415,55 @@
                             {{ user === 'xuan' ? 'Xuan' : 'Chiau' }} 的購物清單
                         </h2>
                         
-                        <div class="space-y-2 mb-6">
-                            <input v-model="newItemText[user]" @keydown.enter="addShoppingItem(user)" type="text" placeholder="想買什麼？" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 transition-all outline-none" :class="user === 'xuan' ? 'focus:ring-pink-200' : 'focus:ring-indigo-200'">
+                        <!-- Input Section -->
+                        <div class="space-y-2 mb-8 bg-stone-50/50 p-4 rounded-2xl border border-stone-100">
+                            <input v-model="newItemText[user]" @keydown.enter="addShoppingItem(user)" type="text" placeholder="想買什麼？ (例如：維他命)" class="w-full bg-white border border-stone-100 rounded-xl px-4 py-3 text-sm outline-none shadow-sm focus:ring-2" :class="user === 'xuan' ? 'focus:ring-pink-200' : 'focus:ring-indigo-200'">
                             <div class="flex gap-2">
-                                <input v-model="newItemCategory[user]" @keydown.enter="addShoppingItem(user)" type="text" placeholder="分類 (例如：藥妝)" class="flex-1 bg-stone-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 transition-all outline-none" :class="user === 'xuan' ? 'focus:ring-pink-200' : 'focus:ring-indigo-200'">
-                                <button @click="addShoppingItem(user)" class="w-12 h-11 rounded-xl text-white shadow-lg transition-colors flex items-center justify-center" :class="user === 'xuan' ? 'bg-pink-400 shadow-pink-200 hover:bg-pink-500' : 'bg-indigo-400 shadow-indigo-200 hover:bg-indigo-500'">
+                                <div class="relative flex-1">
+                                    <input v-model="newItemCategory[user]" @keydown.enter="addShoppingItem(user)" type="text" placeholder="分類 (點擊預設或手打)" class="w-full bg-white border border-stone-100 rounded-xl px-4 py-3 text-sm outline-none shadow-sm focus:ring-2 pr-10" :class="user === 'xuan' ? 'focus:ring-pink-200' : 'focus:ring-indigo-200'">
+                                </div>
+                                <button @click="addShoppingItem(user)" class="w-12 h-11 rounded-xl text-white shadow-lg flex items-center justify-center flex-shrink-0" :class="user === 'xuan' ? 'bg-pink-400 shadow-pink-100 hover:bg-pink-500' : 'bg-indigo-400 shadow-indigo-100 hover:bg-indigo-500'">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
+                            <!-- Category Quick Selection Chips -->
+                            <div class="flex flex-wrap gap-1.5 mt-2">
+                                <button v-for="c in ['藥妝','伴手禮','玩具','食物','其他']" :key="c" @click="newItemCategory[user] = c" class="text-[10px] px-2 py-1 rounded-full border border-stone-200 text-stone-400 hover:border-lake-300 hover:text-lake-400 bg-white transition-all">{{ c }}</button>
+                            </div>
                         </div>
 
-                        <!-- Grouped List -->
+                        <!-- Grouped List Display -->
                         <div class="space-y-8">
-                            <div v-for="(group, catName) in groupedShoppingList(user)" :key="catName" class="space-y-3">
-                                <h3 class="text-xs font-bold text-stone-300 uppercase tracking-widest flex items-center gap-2">
-                                    <span class="w-1.5 h-1.5 rounded-full" :class="user === 'xuan' ? 'bg-pink-400' : 'bg-indigo-400'"></span>
-                                    {{ catName || '未分類' }}
-                                </h3>
-                                <div v-for="item in group" :key="item.id" class="flex items-center gap-3 p-3 rounded-xl bg-stone-50 group hover:bg-white hover:shadow-sm border border-transparent hover:border-stone-100 transition-all">
+                            <div v-for="(group, catName) in currentGroupedList(user)" :key="catName" class="space-y-3">
+                                <div class="flex items-center gap-3 px-1">
+                                    <h3 class="text-sm font-bold text-sumi tracking-wider">{{ catName }}</h3>
+                                    <div class="flex-1 h-px bg-stone-100 mt-0.5"></div>
+                                    <span class="text-[10px] font-bold text-stone-300 uppercase tracking-tighter">{{ group.length }} items</span>
+                                </div>
+                                <div 
+                                    v-for="item in group" 
+                                    :key="item.id" 
+                                    class="shopping-item flex items-center gap-3 p-3.5 rounded-2xl bg-white group border border-stone-50 shadow-sm"
+                                    @touchstart="startLongPress(user, item)"
+                                    @touchend="cancelLongPress"
+                                    @mousedown="startLongPress(user, item)"
+                                    @mouseup="cancelLongPress"
+                                >
                                     <label class="checkbox-wrapper cursor-pointer relative w-6 h-6">
                                         <input type="checkbox" v-model="item.checked" @change="saveToCloud()" class="opacity-0 absolute w-full h-full cursor-pointer">
-                                        <div class="w-6 h-6 border-2 border-stone-300 rounded-lg flex items-center justify-center transition-all bg-white">
-                                            <svg class="w-3 h-3 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                        <div class="w-6 h-6 border-2 border-stone-200 rounded-lg flex items-center justify-center transition-all bg-stone-50">
+                                            <svg class="w-3.5 h-3.5 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                         </div>
                                     </label>
-                                    <span class="flex-1 text-sm font-medium transition-all" :class="item.checked ? 'text-stone-300 line-through' : 'text-sumi'">{{ item.text }}</span>
-                                    <button @click="confirmAction('deleteItem', {who: user, id: item.id})" class="text-stone-300 hover:text-red-400 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
+                                    <span class="flex-1 text-sm font-medium" :class="item.checked ? 'text-stone-300 line-through' : 'text-sumi'">{{ item.text }}</span>
+                                    <button @click="confirmAction('deleteItem', {who: user, id: item.id})" class="text-stone-300 hover:text-red-400 p-2 rounded-full opacity-0 group-hover:opacity-100">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div v-if="(user === 'xuan' ? xuanList : chiauList).length === 0" class="text-center py-10 text-stone-300 text-xs tracking-widest">
-                                EMPTY LIST
+                            <div v-if="(user === 'xuan' ? xuanList : chiauList).length === 0" class="flex flex-col items-center justify-center py-20 opacity-30">
+                                <i class="fa-solid fa-clipboard-list text-3xl mb-3"></i>
+                                <p class="text-xs font-bold uppercase tracking-widest text-center">清單目前是空的<br><small class="font-normal">( 長按項目可移動分類 )</small></p>
                             </div>
                         </div>
                     </div>
@@ -461,64 +472,65 @@
 
         </main>
 
-        <!-- FAB (Floating Action Button) -->
+        <!-- MOVE CATEGORY MODAL (Long Press) -->
         <transition name="fade">
-            <button 
-                v-if="currentTab === 'itinerary' && viewMode === 'list'"
-                @click="openAddModal" 
-                class="absolute bottom-8 right-6 w-14 h-14 bg-lake-400 text-white rounded-[20px] shadow-xl shadow-lake-300/40 flex items-center justify-center text-xl hover:bg-lake-500 hover:scale-105 active:scale-95 transition-all z-30"
-            >
-                <i class="fa-solid fa-plus"></i>
-            </button>
-        </transition>
-
-        <!-- CONFIRMATION MODAL -->
-        <transition name="fade">
-            <div v-if="confirmState.show" class="absolute inset-0 z-[60] flex items-center justify-center bg-stone-900/30 backdrop-blur-sm p-6">
-                <div class="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-xs text-center transform transition-all scale-100">
-                    <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center mx-auto mb-4 text-xl">
-                        <i class="fa-solid fa-exclamation"></i>
+            <div v-if="moveModal.show" class="absolute inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm" @click.self="moveModal.show = false">
+                <div class="bg-white w-full max-w-xs rounded-[32px] overflow-hidden shadow-2xl slide-up-animation">
+                    <div class="p-6 pb-2">
+                        <p class="text-[10px] font-bold text-stone-300 uppercase tracking-widest mb-1">移動項目分類</p>
+                        <h3 class="text-lg font-bold text-sumi mb-4 truncate">「{{ moveModal.item?.text }}」</h3>
                     </div>
-                    <h3 class="text-lg font-bold text-sumi mb-2">確定執行？</h3>
-                    <p class="text-sm text-stone-400 mb-6">{{ confirmState.message }}</p>
-                    <div class="flex gap-3">
-                        <button @click="confirmState.show = false" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-400 font-medium hover:bg-stone-50 transition-colors">取消</button>
-                        <button @click="executeConfirm" class="flex-1 py-2.5 rounded-xl bg-red-400 text-white font-bold shadow-lg shadow-red-200 hover:bg-red-500 transition-colors">確認刪除</button>
+                    <div class="max-h-60 overflow-y-auto no-scrollbar px-4 pb-4">
+                        <div class="space-y-1">
+                            <button 
+                                v-for="cat in availableCategories" 
+                                :key="cat"
+                                @click="moveItemTo(cat)"
+                                class="w-full text-left p-3.5 rounded-xl text-sm font-medium hover:bg-stone-50 transition-colors flex items-center justify-between"
+                                :class="moveModal.item?.category === cat ? 'text-lake-500 bg-lake-50/50' : 'text-stone-600'"
+                            >
+                                {{ cat }}
+                                <i v-if="moveModal.item?.category === cat" class="fa-solid fa-check text-xs"></i>
+                            </button>
+                            <button @click="promptNewCategory" class="w-full text-left p-3.5 rounded-xl text-sm font-bold text-lake-400 border border-dashed border-lake-100 hover:bg-lake-50 mt-2">
+                                <i class="fa-solid fa-plus mr-2"></i>新增其他分類...
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-stone-50/50">
+                        <button @click="moveModal.show = false" class="w-full py-3 text-stone-400 font-bold text-sm">取消</button>
                     </div>
                 </div>
             </div>
         </transition>
 
-        <!-- Edit/Add Event Modal -->
+        <!-- Modals for Events & Flight -->
         <transition name="slide-up">
             <div v-if="showModal && !isFlightMode" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
-                <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto transition-opacity"></div>
+                <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto"></div>
                 <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 pointer-events-auto shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar">
                     <div class="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-6"></div>
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-xl font-bold text-sumi tracking-wide">{{ isEditing ? '編輯行程' : '新增行程' }}</h2>
-                        <button @click="closeModal" class="w-8 h-8 rounded-full bg-stone-50 text-stone-400 flex items-center justify-center hover:bg-stone-100 transition-colors flex-shrink-0">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
+                        <button @click="closeModal" class="w-8 h-8 rounded-full bg-stone-50 text-stone-400 flex items-center justify-center hover:bg-stone-100"><i class="fa-solid fa-xmark"></i></button>
                     </div>
-
                     <form @submit.prevent="saveEvent" class="space-y-6">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">開始時間</label>
                                 <div class="flex gap-2">
-                                    <select v-model="form.hour" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                    <select v-model="form.hour" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm appearance-none text-center">
                                         <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
                                     </select>
                                     <span class="py-3 text-stone-300">:</span>
-                                    <select v-model="form.minute" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
+                                    <select v-model="form.minute" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm appearance-none text-center">
                                         <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-span-3">
                                 <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">類別</label>
-                                <select v-model="form.type" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm appearance-none focus:ring-2 focus:ring-lake-200 transition-shadow">
+                                <select v-model="form.type" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm appearance-none focus:ring-2 focus:ring-lake-200">
                                     <option value="sightseeing">景點 Sightseeing</option>
                                     <option value="food">美食 Food</option>
                                     <option value="shopping">購物 Shopping</option>
@@ -527,64 +539,51 @@
                                 </select>
                             </div>
                         </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">結束時間</label>
-                                <div class="flex gap-2">
-                                    <select v-model="form.endHour" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
-                                        <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
-                                    </select>
-                                    <span class="py-3 text-stone-300">:</span>
-                                    <select v-model="form.endMinute" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm focus:ring-2 focus:ring-lake-200 appearance-none text-center">
-                                        <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
-                                    </select>
-                                </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">結束時間</label>
+                            <div class="flex gap-2">
+                                <select v-model="form.endHour" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm appearance-none text-center">
+                                    <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
+                                </select>
+                                <span class="py-3 text-stone-300">:</span>
+                                <select v-model="form.endMinute" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm appearance-none text-center">
+                                    <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
+                                </select>
                             </div>
                         </div>
-
                         <div>
                             <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">標題</label>
-                            <input v-model="form.title" type="text" placeholder="要去哪裡呢？" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow">
+                            <input v-model="form.title" type="text" placeholder="要去哪裡呢？" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm focus:ring-2 focus:ring-lake-200">
                         </div>
-
                         <div>
                             <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">地點</label>
                             <div class="relative">
-                                <input v-model="form.location" type="text" placeholder="輸入地點..." class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 pl-10 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow">
+                                <input v-model="form.location" type="text" placeholder="地點名稱..." class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 pl-10 text-sumi text-sm focus:ring-2 focus:ring-lake-200">
                                 <i class="fa-solid fa-map-pin absolute left-4 top-3.5 text-stone-300 text-sm"></i>
                             </div>
                         </div>
-
                         <div>
                             <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">備註</label>
-                            <textarea v-model="form.note" rows="3" placeholder="補充資訊..." class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm placeholder-stone-300 focus:ring-2 focus:ring-lake-200 transition-shadow resize-none"></textarea>
+                            <textarea v-model="form.note" rows="3" placeholder="補充資訊..." class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm resize-none"></textarea>
                         </div>
-
                         <div class="pt-6 flex gap-3">
-                            <button v-if="isEditing" type="button" @click="confirmAction('deleteEvent')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors">
-                                <i class="fa-regular fa-trash-can"></i>
-                            </button>
-                            <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold shadow-lg shadow-lake-200 hover:bg-lake-500 transition-all">
-                                {{ isEditing ? '儲存變更' : '加入行程' }}
-                            </button>
+                            <button v-if="isEditing" type="button" @click="confirmAction('deleteEvent')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors"><i class="fa-regular fa-trash-can"></i></button>
+                            <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold shadow-lg shadow-lake-200 hover:bg-lake-500 transition-all">{{ isEditing ? '儲存變更' : '加入行程' }}</button>
                         </div>
                     </form>
                 </div>
             </div>
         </transition>
 
-        <!-- Edit/Add FLIGHT Modal -->
+        <!-- Flight Modal -->
         <transition name="slide-up">
             <div v-if="showModal && isFlightMode" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
-                <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto transition-opacity"></div>
+                <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto"></div>
                 <div class="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 pointer-events-auto shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar">
                     <div class="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-6"></div>
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-xl font-bold text-sumi tracking-wide">{{ editingFlightType === 'arrival' ? '去程航班' : '回程航班' }}</h2>
-                        <button @click="closeModal" class="w-8 h-8 rounded-full bg-stone-50 text-stone-400 flex items-center justify-center hover:bg-stone-100 transition-colors flex-shrink-0">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
+                        <button @click="closeModal" class="w-8 h-8 rounded-full bg-stone-50 text-stone-400 flex items-center justify-center hover:bg-stone-100"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <form @submit.prevent="saveFlight" class="space-y-6">
                         <div>
@@ -601,16 +600,10 @@
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">機場 / 地點</label>
-                            <input v-model="flightForm.location" type="text" placeholder="e.g. NGO" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">備註 / 航廈</label>
-                            <textarea v-model="flightForm.note" rows="2" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm resize-none"></textarea>
+                            <input v-model="flightForm.location" type="text" placeholder="中部國際機場 (NGO)" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm">
                         </div>
                         <div class="pt-6 flex gap-3">
-                            <button type="button" @click="confirmAction('clearFlight')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors">
-                                <i class="fa-regular fa-trash-can"></i>
-                            </button>
+                            <button type="button" @click="confirmAction('clearFlight')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors"><i class="fa-regular fa-trash-can"></i></button>
                             <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold shadow-lg shadow-lake-200 hover:bg-lake-500 transition-all">儲存航班資訊</button>
                         </div>
                     </form>
@@ -626,12 +619,14 @@
 
     createApp({
         setup() {
-            // --- Supabase Config ---
+            // --- Configuration ---
             const SUPABASE_URL = 'https://nrormwhklkytqyrbrdbr.supabase.co';
             const SUPABASE_KEY = 'sb_publishable_QuvW2VoIHavfZ7RunbOl1A_Fu34ri_D';
+            const TRIP_ID = 'nagoya_main';
+            const defaultCategories = ['藥妝', '伴手禮', '玩具', '食物', '其他'];
 
-            // --- State ---
-            const days = ref([]);
+            // --- App State ---
+            const days = ref([{ date: 'Day 1', events: [] }]);
             const currentDayIndex = ref(0);
             const showModal = ref(false);
             const isEditing = ref(false);
@@ -639,72 +634,117 @@
             const editingFlightType = ref(''); 
             const tripTitle = ref('Nagoya.Go');
             const confirmState = ref({ show: false, message: '', type: '', payload: null });
-
-            const arrivalFlight = ref({ code: '', time: '', title: '', location: '', note: '', lat: null, lng: null });
-            const departureFlight = ref({ code: '', time: '', title: '', location: '', note: '', lat: null, lng: null });
-            const flightForm = ref({ code: '', time: '', title: '', location: '', note: '' });
-
-            const currentTab = ref('itinerary'); 
+            const currentTab = ref('itinerary');
+            const status = ref('disconnected');
+            const isScrolled = ref(false);
+            const viewMode = ref('list');
+            const startDate = ref(new Date().toISOString().split('T')[0]);
+            const endDate = ref('');
+            const weatherData = ref(null);
+            
             const tabs = [
                 { id: 'itinerary', label: '行程', icon: 'fa-solid fa-calendar-days' },
                 { id: 'xuan', label: 'Xuan', icon: 'fa-solid fa-user' },
                 { id: 'chiau', label: 'Chiau', icon: 'fa-solid fa-user' },
             ];
 
+            // --- Shopping State ---
             const xuanList = ref([]);
             const chiauList = ref([]);
             const newItemText = ref({ xuan: '', chiau: '' });
             const newItemCategory = ref({ xuan: '', chiau: '' });
             
-            const viewMode = ref('list'); 
-            const isScrolled = ref(false);
-            const isMapLoading = ref(false);
-            let map = null;
-            let markers = [];
+            const moveModal = ref({ show: false, user: '', item: null });
+            let longPressTimer = null;
 
-            const startDate = ref(new Date().toISOString().split('T')[0]); 
-            const endDate = ref(''); 
-            const weatherData = ref(null);
-            const status = ref('disconnected'); 
-            let supabase = null;
-            const TRIP_ID = 'nagoya_main'; 
-
+            const arrivalFlight = ref({ code: '', time: '', title: '', location: '', note: '' });
+            const departureFlight = ref({ code: '', time: '', title: '', location: '', note: '' });
+            const flightForm = ref({ code: '', time: '', title: '', location: '', note: '' });
             const form = ref({ 
                 id: null, time: '09:00', endTime: '10:00', hour: '09', minute: '00', endHour: '10', endMinute: '00',
-                type: 'sightseeing', title: '', location: '', note: '', lat: null, lng: null 
+                type: 'sightseeing', title: '', location: '', note: '' 
             });
 
-            const defaultStartDate = new Date().toISOString().split('T')[0];
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const defaultEndDate = tomorrow.toISOString().split('T')[0];
+            // --- Methods: Shopping Logic ---
+            const addShoppingItem = (who) => {
+                const text = newItemText.value[who].trim();
+                const category = newItemCategory.value[who].trim() || '未分類';
+                if (!text) return;
 
-            const defaultData = {
-                tripTitle: 'Nagoya.Go', startDate: defaultStartDate, endDate: defaultEndDate,
-                xuanList: [], chiauList: [], arrivalFlight: { code: '' }, departureFlight: { code: '' },
-                days: [{ date: 'Day 1', events: [] }]
+                const item = { id: Date.now(), text, category, checked: false };
+                if (who === 'xuan') xuanList.value.push(item); else chiauList.value.push(item);
+                
+                newItemText.value[who] = '';
+                // Category is kept for continuous input
+                saveToCloud();
             };
 
-            // --- Methods ---
+            const currentGroupedList = (who) => {
+                const list = who === 'xuan' ? xuanList.value : chiauList.value;
+                if (!list || list.length === 0) return {};
+                
+                const groups = {};
+                list.forEach(item => {
+                    const cat = item.category || '未分類';
+                    if (!groups[cat]) groups[cat] = [];
+                    groups[cat].push(item);
+                });
+                return groups;
+            };
+
+            const availableCategories = computed(() => {
+                const list = moveModal.value.user === 'xuan' ? xuanList.value : chiauList.value;
+                const existingCats = list.map(i => i.category || '未分類');
+                // Merge default and existing categories
+                const all = [...new Set([...defaultCategories, ...existingCats])];
+                // Ensure "未分類" is at the end
+                return all.filter(c => c !== '未分類').concat(['未分類']);
+            });
+
+            const startLongPress = (user, item) => {
+                longPressTimer = setTimeout(() => {
+                    moveModal.value = { show: true, user, item };
+                }, 600);
+            };
+
+            const cancelLongPress = () => {
+                if (longPressTimer) clearTimeout(longPressTimer);
+            };
+
+            const moveItemTo = (newCat) => {
+                if (!moveModal.value.item) return;
+                moveModal.value.item.category = newCat;
+                saveToCloud();
+                moveModal.value.show = false;
+            };
+
+            const promptNewCategory = () => {
+                const newCat = prompt("請輸入新分類名稱：");
+                if (newCat && newCat.trim()) {
+                    moveItemTo(newCat.trim());
+                }
+            };
+
+            // --- Methods: Common ---
             const confirmAction = (type, payload = null) => {
                 confirmState.value = { show: true, type, payload, message: '' };
                 if (type === 'deleteEvent') confirmState.value.message = '確定要刪除這個行程嗎？';
-                else if (type === 'deleteItem') confirmState.value.message = '確定刪除此購物項目嗎？';
-                else if (type === 'clearFlight') confirmState.value.message = '確定清除此航班資訊嗎？';
-                else if (type === 'reset') confirmState.value.message = '確定要重置所有資料嗎？';
+                else if (type === 'deleteItem') confirmState.value.message = '確定要刪除此購物項目？';
+                else if (type === 'clearFlight') confirmState.value.message = '確定要清除此航班資訊？';
+                else if (type === 'reset') confirmState.value.message = '這將清除所有資料並重置。確定？';
             };
 
             const executeConfirm = () => {
                 const { type, payload } = confirmState.value;
                 confirmState.value.show = false;
                 if (type === 'deleteEvent') {
-                    const currentEvents = days.value[currentDayIndex.value].events;
-                    const index = currentEvents.findIndex(e => e.id === form.value.id);
-                    if (index !== -1) currentEvents.splice(index, 1);
+                    const evs = days.value[currentDayIndex.value].events;
+                    const idx = evs.findIndex(x => x.id === form.value.id);
+                    if (idx !== -1) evs.splice(idx, 1);
                     saveToCloud(); closeModal();
                 } else if (type === 'deleteItem') {
                     const list = payload.who === 'xuan' ? xuanList : chiauList;
-                    const idx = list.value.findIndex(i => i.id === payload.id);
+                    const idx = list.value.findIndex(x => x.id === payload.id);
                     if (idx !== -1) list.value.splice(idx, 1);
                     saveToCloud();
                 } else if (type === 'clearFlight') {
@@ -716,33 +756,11 @@
                 }
             };
 
-            const addShoppingItem = (who) => {
-                const text = newItemText.value[who].trim();
-                const cat = newItemCategory.value[who].trim();
-                if (!text) return;
-                const item = { id: Date.now(), text, category: cat, checked: false };
-                if (who === 'xuan') xuanList.value.push(item); else chiauList.value.push(item);
-                newItemText.value[who] = '';
-                newItemCategory.value[who] = '';
-                saveToCloud();
-            };
-
-            const groupedShoppingList = (who) => {
-                const list = who === 'xuan' ? xuanList.value : chiauList.value;
-                return list.reduce((acc, item) => {
-                    const cat = item.category || '';
-                    if (!acc[cat]) acc[cat] = [];
-                    acc[cat].push(item);
-                    return acc;
-                }, {});
-            };
-
             // --- Weather ---
             const todayWeatherSummary = computed(() => {
                 if (!weatherData.value || !weatherData.value.daily) return null;
                 const todayStr = new Date().toISOString().split('T')[0];
-                const index = weatherData.value.daily.time.findIndex(t => t === todayStr);
-                // Fallback to first item if today is not found
+                const index = weatherData.value.daily.time.indexOf(todayStr);
                 const targetIdx = index !== -1 ? index : 0;
                 return {
                     max: Math.round(weatherData.value.daily.temperature_2m_max[targetIdx]),
@@ -753,14 +771,11 @@
 
             const getEventWeather = (timeStr) => {
                 if (!weatherData.value || !startDate.value) return null;
-                const eventDate = new Date(startDate.value);
-                eventDate.setDate(eventDate.getDate() + currentDayIndex.value);
+                const d = new Date(startDate.value); d.setDate(d.getDate() + currentDayIndex.value);
                 const hour = timeStr.split(':')[0].padStart(2, '0');
-                const targetKey = `${eventDate.toISOString().split('T')[0]}T${hour}:00`;
-                if (weatherData.value.hourly?.time) {
-                     const index = weatherData.value.hourly.time.findIndex(t => t === targetKey);
-                    if (index !== -1) return { temp: Math.round(weatherData.value.hourly.temperature_2m[index]), code: weatherData.value.hourly.weathercode[index] };
-                }
+                const key = `${d.toISOString().split('T')[0]}T${hour}:00`;
+                const idx = weatherData.value.hourly?.time.indexOf(key);
+                if (idx !== -1) return { temp: Math.round(weatherData.value.hourly.temperature_2m[idx]), code: weatherData.value.hourly.weathercode[idx] };
                 return null;
             };
 
@@ -769,45 +784,18 @@
                 return `fa-solid ${map[code] || 'fa-cloud'}`;
             };
 
-            // --- Map Logic ---
-            const toggleViewMode = () => {
-                viewMode.value = viewMode.value === 'list' ? 'map' : 'list';
-                if (viewMode.value === 'map') { nextTick(() => { initMap(); renderMapMarkers(); }); }
-            };
-
-            const initMap = () => {
-                if (map) return; 
-                map = L.map('map-container').setView([35.1709, 136.8815], 13);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(map);
-            };
-
-            const renderMapMarkers = async () => {
-                if (!map) return;
-                markers.forEach(m => map.removeLayer(m));
-                markers = [];
-                const events = days.value[currentDayIndex.value]?.events || [];
-                const bounds = L.latLngBounds();
-                let hasPoints = false;
-                for (const event of events) {
-                    if (event.lat && event.lng) {
-                        const m = L.marker([event.lat, event.lng]).addTo(map).bindPopup(event.title);
-                        markers.push(m); bounds.extend([event.lat, event.lng]); hasPoints = true;
-                    }
-                }
-                if (hasPoints) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-            };
-
-            // --- Supabase & Data ---
+            // --- Supabase ---
+            let supabase = null;
             const saveToCloud = async (forceReset = false) => {
                 if (!supabase) return;
                 status.value = 'loading';
-                const dataToSave = forceReset ? defaultData : { 
+                const content = forceReset ? { tripTitle: 'Nagoya.Go', days: [{ date: 'Day 1', events: [] }], xuanList: [], chiauList: [] } : { 
                     tripTitle: tripTitle.value, startDate: startDate.value, endDate: endDate.value, 
                     days: days.value, xuanList: xuanList.value, chiauList: chiauList.value,
                     arrivalFlight: arrivalFlight.value, departureFlight: departureFlight.value
                 };
-                if(forceReset) { days.value = defaultData.days; xuanList.value = []; chiauList.value = []; }
-                const { error } = await supabase.from('trip_plans').upsert({ id: TRIP_ID, content: dataToSave });
+                if(forceReset) { days.value = content.days; xuanList.value = []; chiauList.value = []; }
+                const { error } = await supabase.from('trip_plans').upsert({ id: TRIP_ID, content });
                 status.value = error ? 'error' : 'connected';
             };
 
@@ -816,23 +804,19 @@
                 supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
                 const { data } = await supabase.from('trip_plans').select('content').eq('id', TRIP_ID).maybeSingle();
                 if (data?.content) {
-                    days.value = data.content.days; tripTitle.value = data.content.tripTitle;
-                    startDate.value = data.content.startDate; endDate.value = data.content.endDate;
-                    xuanList.value = data.content.xuanList || []; chiauList.value = data.content.chiauList || [];
+                    days.value = data.content.days || [{ date: 'Day 1', events: [] }];
+                    tripTitle.value = data.content.tripTitle || 'Nagoya.Go';
+                    startDate.value = data.content.startDate || new Date().toISOString().split('T')[0];
+                    endDate.value = data.content.endDate || '';
+                    xuanList.value = data.content.xuanList || [];
+                    chiauList.value = data.content.chiauList || [];
                     arrivalFlight.value = data.content.arrivalFlight || { code: '' };
                     departureFlight.value = data.content.departureFlight || { code: '' };
-                } else { days.value = defaultData.days; }
+                }
                 status.value = 'connected';
             };
 
-            // --- Lifecycle & Helpers ---
-            const fetchWeather = async () => {
-                try {
-                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=35.18&longitude=136.91&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Asia%2FTokyo&forecast_days=16`);
-                    weatherData.value = await res.json();
-                } catch(e) { console.error(e); }
-            };
-
+            // --- Helpers ---
             const formatDuration = (s, e) => {
                 if(!s || !e) return '';
                 const [sh, sm] = s.split(':').map(Number), [eh, em] = e.split(':').map(Number);
@@ -843,9 +827,9 @@
             };
 
             const getTypeColor = (t, m) => {
-                const c = { sightseeing: 'lake-400', food: 'orange-400', shopping: 'pink-400', transport: 'stone-400', hotel: 'indigo-400' };
-                const key = c[t] || c.sightseeing;
-                return m === 'dot' ? 'bg-' + key : (m === 'header' ? 'bg-' + key : 'text-' + key);
+                const colors = { sightseeing: 'lake-400', food: 'orange-400', shopping: 'pink-400', transport: 'stone-400', hotel: 'indigo-400' };
+                const c = colors[t] || colors.sightseeing;
+                return m === 'dot' ? 'bg-'+c : (m === 'header' ? 'bg-'+c : 'text-'+c);
             };
 
             const getTypeName = (t) => ({ sightseeing: '景點', food: '美食', shopping: '購物', transport: '交通', hotel: '住宿' }[t] || '行程');
@@ -853,11 +837,9 @@
                 const d = new Date(startDate.value); d.setDate(d.getDate() + i);
                 return `${d.getMonth()+1}/${d.getDate()}${s?' '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]:''}`;
             };
-
-            const changeDay = (i) => currentDayIndex.value = i;
+            const closeModal = () => showModal.value = false;
             const openAddModal = () => { isFlightMode.value = false; isEditing.value = false; form.value = { id: Date.now(), time: '09:00', endTime: '10:00', hour: '09', minute: '00', endHour: '10', endMinute: '00', type: 'sightseeing', title: '', location: '', note: '' }; showModal.value = true; };
             const editEvent = (e) => { isFlightMode.value = false; isEditing.value = true; const [h, m] = e.time.split(':'), [eh, em] = e.endTime.split(':'); form.value = { ...e, hour: h, minute: m, endHour: eh, endMinute: em }; showModal.value = true; };
-            const closeModal = () => showModal.value = false;
             const saveEvent = () => {
                 form.value.time = `${form.value.hour}:${form.value.minute}`; form.value.endTime = `${form.value.endHour}:${form.value.endMinute}`;
                 const evs = days.value[currentDayIndex.value].events;
@@ -867,20 +849,24 @@
             const openFlightModal = (t) => { isFlightMode.value = true; editingFlightType.value = t; flightForm.value = { ...(t === 'arrival' ? arrivalFlight.value : departureFlight.value) }; showModal.value = true; };
             const saveFlight = () => { if(editingFlightType.value === 'arrival') arrivalFlight.value = { ...flightForm.value }; else departureFlight.value = { ...flightForm.value }; saveToCloud(); closeModal(); };
             const manualAddDay = () => { days.value.push({ date: `Day ${days.value.length+1}`, events: [] }); saveToCloud(); };
-            const getMapUrl = (l) => l ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l)}` : '#';
-            const checkScroll = (e) => isScrolled.value = e.target.scrollTop > 10;
-            const handleDateChange = () => { saveToCloud(); };
+            const changeDay = (i) => currentDayIndex.value = i;
+            const fetchWeather = async () => {
+                try {
+                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=35.18&longitude=136.91&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Asia%2FTokyo&forecast_days=16`);
+                    weatherData.value = await res.json();
+                } catch(e) { console.error(e); }
+            };
 
             onMounted(() => { initSupabase(); fetchWeather(); });
 
             return {
-                days, currentDayIndex, showModal, isEditing, form, startDate, endDate, handleDateChange, manualAddDay, tripTitle,
-                weatherData, status, viewMode, isScrolled, isMapLoading, currentTab, tabs, xuanList, chiauList, newItemText, newItemCategory,
-                arrivalFlight, departureFlight, flightForm, openFlightModal, saveFlight, isFlightMode, editingFlightType,
-                confirmState, confirmAction, executeConfirm,
-                todayWeatherSummary, formatDuration, getTypeColor, getTypeName, getMapUrl, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, saveToCloud, changeDay, getDayDateString, getEventWeather, toggleViewMode, checkScroll, addShoppingItem, groupedShoppingList,
+                days, currentDayIndex, showModal, isEditing, form, startDate, endDate, tripTitle, status, viewMode, isScrolled, currentTab, tabs, xuanList, chiauList, newItemText, newItemCategory, arrivalFlight, departureFlight, flightForm, confirmState, todayWeatherSummary, moveModal, availableCategories,
+                confirmAction, executeConfirm, addShoppingItem, currentGroupedList, formatDuration, getTypeColor, getTypeName, getDayDateString, getEventWeather, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, saveToCloud, openFlightModal, saveFlight, manualAddDay, changeDay, startLongPress, cancelLongPress, moveItemTo, promptNewCategory,
                 sortedEvents: computed(() => [...(days.value[currentDayIndex.value]?.events || [])].sort((a, b) => a.time.localeCompare(b.time))),
-                currentDayEvents: computed(() => days.value[currentDayIndex.value]?.events || [])
+                getMapUrl: (l) => l ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l)}` : '#',
+                toggleViewMode: () => viewMode.value = viewMode.value === 'list' ? 'map' : 'list',
+                checkScroll: (e) => isScrolled.value = e.target.scrollTop > 10,
+                handleDateChange: () => saveToCloud()
             };
         }
     }).mount('#app');
