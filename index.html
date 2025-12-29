@@ -208,12 +208,12 @@
             </div>
 
             <!-- Main Tab Navigation -->
-            <div class="flex bg-stone-100 p-1 rounded-xl mb-3">
+            <div class="flex bg-stone-100 p-1 rounded-xl mb-3 overflow-x-auto no-scrollbar">
                 <button 
                     v-for="tab in tabs" 
                     :key="tab.id"
                     @click="currentTab = tab.id"
-                    class="flex-1 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5"
+                    class="flex-shrink-0 px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5"
                     :class="currentTab === tab.id ? 'bg-white text-sumi shadow-sm' : 'text-stone-400 hover:text-stone-500'"
                 >
                     <i :class="tab.icon"></i>
@@ -221,7 +221,7 @@
                 </button>
             </div>
 
-            <!-- Day Selector (Only visible in Itinerary tab) -->
+            <!-- Day Selector -->
             <div v-if="currentTab === 'itinerary'" class="relative -mx-6 transition-all duration-300"> 
                 <div class="flex overflow-x-auto no-scrollbar snap-x-mandatory px-6 pb-2 gap-4" id="day-scroller">
                     <button 
@@ -415,30 +415,24 @@
                             {{ user === 'xuan' ? 'Xuan' : 'Chiau' }} 的購物清單
                         </h2>
                         
-                        <!-- Input Section -->
                         <div class="space-y-2 mb-8 bg-stone-50/50 p-4 rounded-2xl border border-stone-100">
                             <input v-model="newItemText[user]" @keydown.enter="addShoppingItem(user)" type="text" placeholder="想買什麼？ (例如：維他命)" class="w-full bg-white border border-stone-100 rounded-xl px-4 py-3 text-sm outline-none shadow-sm focus:ring-2" :class="user === 'xuan' ? 'focus:ring-pink-200' : 'focus:ring-indigo-200'">
                             <div class="flex gap-2">
-                                <div class="relative flex-1">
-                                    <input v-model="newItemCategory[user]" @keydown.enter="addShoppingItem(user)" type="text" placeholder="分類 (點擊預設或手打)" class="w-full bg-white border border-stone-100 rounded-xl px-4 py-3 text-sm outline-none shadow-sm focus:ring-2 pr-10" :class="user === 'xuan' ? 'focus:ring-pink-200' : 'focus:ring-indigo-200'">
-                                </div>
+                                <input v-model="newItemCategory[user]" @keydown.enter="addShoppingItem(user)" type="text" placeholder="分類 (點擊預設或手打)" class="flex-1 bg-white border border-stone-100 rounded-xl px-4 py-3 text-sm outline-none shadow-sm focus:ring-2" :class="user === 'xuan' ? 'focus:ring-pink-200' : 'focus:ring-indigo-200'">
                                 <button @click="addShoppingItem(user)" class="w-12 h-11 rounded-xl text-white shadow-lg flex items-center justify-center flex-shrink-0" :class="user === 'xuan' ? 'bg-pink-400 shadow-pink-100 hover:bg-pink-500' : 'bg-indigo-400 shadow-indigo-100 hover:bg-indigo-500'">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
-                            <!-- Category Quick Selection Chips -->
                             <div class="flex flex-wrap gap-1.5 mt-2">
                                 <button v-for="c in ['藥妝','伴手禮','玩具','食物','其他']" :key="c" @click="newItemCategory[user] = c" class="text-[10px] px-2 py-1 rounded-full border border-stone-200 text-stone-400 hover:border-lake-300 hover:text-lake-400 bg-white transition-all">{{ c }}</button>
                             </div>
                         </div>
 
-                        <!-- Grouped List Display -->
                         <div class="space-y-8">
                             <div v-for="(group, catName) in currentGroupedList(user)" :key="catName" class="space-y-3">
                                 <div class="flex items-center gap-3 px-1">
                                     <h3 class="text-sm font-bold text-sumi tracking-wider">{{ catName }}</h3>
                                     <div class="flex-1 h-px bg-stone-100 mt-0.5"></div>
-                                    <span class="text-[10px] font-bold text-stone-300 uppercase tracking-tighter">{{ group.length }} items</span>
                                 </div>
                                 <div 
                                     v-for="item in group" 
@@ -461,50 +455,86 @@
                                     </button>
                                 </div>
                             </div>
-                            <div v-if="(user === 'xuan' ? xuanList : chiauList).length === 0" class="flex flex-col items-center justify-center py-20 opacity-30">
-                                <i class="fa-solid fa-clipboard-list text-3xl mb-3"></i>
-                                <p class="text-xs font-bold uppercase tracking-widest text-center">清單目前是空的<br><small class="font-normal">( 長按項目可移動分類 )</small></p>
-                            </div>
                         </div>
                     </div>
                 </div>
             </template>
 
+            <!-- ====== DISCOVER TAB ====== -->
+            <div v-if="currentTab === 'discover'" class="absolute inset-0 overflow-y-auto p-4 pb-24 bg-washi no-scrollbar">
+                <div class="bg-white p-6 rounded-[32px] shadow-sm border border-stone-50 min-h-[400px]">
+                    <h2 class="text-xl font-bold text-sumi mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-lake-100 text-lake-500 flex items-center justify-center text-sm"><i class="fa-solid fa-star"></i></span>
+                        口袋名單
+                    </h2>
+                    
+                    <div class="space-y-2 mb-8 bg-stone-50/50 p-4 rounded-2xl border border-stone-100">
+                        <input v-model="newDiscover.title" type="text" placeholder="名稱 (景點/美食)" class="w-full bg-white border border-stone-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-lake-200 outline-none">
+                        <div class="flex gap-2">
+                            <select v-model="newDiscover.type" class="flex-1 bg-white border border-stone-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-lake-200 outline-none appearance-none">
+                                <option value="sightseeing">景點</option>
+                                <option value="food">美食</option>
+                                <option value="shopping">購物</option>
+                                <option value="hotel">住宿</option>
+                                <option value="other">其他</option>
+                            </select>
+                            <input v-model="newDiscover.url" type="text" placeholder="網址 (選填)" class="flex-[2] bg-white border border-stone-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-lake-200 outline-none">
+                            <button @click="addDiscoverItem" class="w-12 h-11 rounded-xl bg-lake-400 text-white shadow-lg flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div v-for="(group, typeKey) in groupedDiscoverList" :key="typeKey" class="space-y-3">
+                            <div class="flex items-center gap-3 px-1">
+                                <h3 class="text-sm font-bold text-sumi tracking-wider">{{ getTypeName(typeKey) }}</h3>
+                                <div class="flex-1 h-px bg-stone-100 mt-0.5"></div>
+                            </div>
+                            <div v-for="item in group" :key="item.id" @click="openLink(item.url)" class="p-4 rounded-2xl bg-white border border-stone-100 shadow-sm flex items-center justify-between hover:border-lake-200 group">
+                                <div class="flex items-center gap-3 truncate">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="getTypeColor(item.type, 'dot')">
+                                        <i class="text-white text-xs" :class="getDiscoverIcon(item.type)"></i>
+                                    </div>
+                                    <span class="font-bold text-sumi text-sm truncate">{{ item.title }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i v-if="item.url" class="fa-solid fa-arrow-up-right-from-square text-[10px] text-stone-300"></i>
+                                    <button @click.stop="confirmAction('deleteDiscover', item.id)" class="text-stone-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
 
-        <!-- MOVE CATEGORY MODAL (Long Press) -->
+        <!-- FAB (Floating Action Button) - Visible in BOTH Itinerary modes -->
+        <transition name="fade">
+            <button 
+                v-if="currentTab === 'itinerary'"
+                @click="openAddModal" 
+                class="absolute bottom-8 right-6 w-14 h-14 bg-lake-400 text-white rounded-[20px] shadow-xl shadow-lake-300/40 flex items-center justify-center text-xl hover:bg-lake-500 z-30"
+            >
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </transition>
+
+        <!-- MOVE CATEGORY MODAL -->
         <transition name="fade">
             <div v-if="moveModal.show" class="absolute inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm" @click.self="moveModal.show = false">
                 <div class="bg-white w-full max-w-xs rounded-[32px] overflow-hidden shadow-2xl slide-up-animation">
-                    <div class="p-6 pb-2">
-                        <p class="text-[10px] font-bold text-stone-300 uppercase tracking-widest mb-1">移動項目分類</p>
-                        <h3 class="text-lg font-bold text-sumi mb-4 truncate">「{{ moveModal.item?.text }}」</h3>
-                    </div>
+                    <div class="p-6 pb-2"><p class="text-[10px] font-bold text-stone-300 uppercase tracking-widest mb-1">移動項目分類</p><h3 class="text-lg font-bold text-sumi mb-4 truncate">「{{ moveModal.item?.text }}」</h3></div>
                     <div class="max-h-60 overflow-y-auto no-scrollbar px-4 pb-4">
                         <div class="space-y-1">
-                            <button 
-                                v-for="cat in availableCategories" 
-                                :key="cat"
-                                @click="moveItemTo(cat)"
-                                class="w-full text-left p-3.5 rounded-xl text-sm font-medium hover:bg-stone-50 transition-colors flex items-center justify-between"
-                                :class="moveModal.item?.category === cat ? 'text-lake-500 bg-lake-50/50' : 'text-stone-600'"
-                            >
-                                {{ cat }}
-                                <i v-if="moveModal.item?.category === cat" class="fa-solid fa-check text-xs"></i>
-                            </button>
-                            <button @click="promptNewCategory" class="w-full text-left p-3.5 rounded-xl text-sm font-bold text-lake-400 border border-dashed border-lake-100 hover:bg-lake-50 mt-2">
-                                <i class="fa-solid fa-plus mr-2"></i>新增其他分類...
-                            </button>
+                            <button v-for="cat in availableCategories" :key="cat" @click="moveItemTo(cat)" class="w-full text-left p-3.5 rounded-xl text-sm font-medium flex items-center justify-between" :class="moveModal.item?.category === cat ? 'text-lake-500 bg-lake-50/50' : 'text-stone-600'">{{ cat }}<i v-if="moveModal.item?.category === cat" class="fa-solid fa-check text-xs"></i></button>
+                            <button @click="promptNewCategory" class="w-full text-left p-3.5 rounded-xl text-sm font-bold text-lake-400 border border-dashed border-lake-100 mt-2"><i class="fa-solid fa-plus mr-2"></i>新增分類...</button>
                         </div>
                     </div>
-                    <div class="p-4 bg-stone-50/50">
-                        <button @click="moveModal.show = false" class="w-full py-3 text-stone-400 font-bold text-sm">取消</button>
-                    </div>
+                    <div class="p-4 bg-stone-50/50"><button @click="moveModal.show = false" class="w-full py-3 text-stone-400 font-bold text-sm">取消</button></div>
                 </div>
             </div>
         </transition>
 
-        <!-- Modals for Events & Flight -->
+        <!-- Common Event Modal -->
         <transition name="slide-up">
             <div v-if="showModal && !isFlightMode" class="absolute inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
                 <div @click="closeModal" class="absolute inset-0 bg-stone-900/20 backdrop-blur-sm pointer-events-auto"></div>
@@ -512,63 +542,19 @@
                     <div class="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-6"></div>
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-xl font-bold text-sumi tracking-wide">{{ isEditing ? '編輯行程' : '新增行程' }}</h2>
-                        <button @click="closeModal" class="w-8 h-8 rounded-full bg-stone-50 text-stone-400 flex items-center justify-center hover:bg-stone-100"><i class="fa-solid fa-xmark"></i></button>
+                        <button @click="closeModal" class="w-8 h-8 rounded-full bg-stone-50 text-stone-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <form @submit.prevent="saveEvent" class="space-y-6">
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">開始時間</label>
-                                <div class="flex gap-2">
-                                    <select v-model="form.hour" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm appearance-none text-center">
-                                        <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
-                                    </select>
-                                    <span class="py-3 text-stone-300">:</span>
-                                    <select v-model="form.minute" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm appearance-none text-center">
-                                        <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
-                                    </select>
-                                </div>
+                            <div><label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">開始時間</label>
+                                <div class="flex gap-2"><select v-model="form.hour" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi appearance-none text-center"><option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option></select><span class="py-3">:</span><select v-model="form.minute" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi appearance-none text-center"><option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option></select></div>
                             </div>
-                            <div class="col-span-3">
-                                <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">類別</label>
-                                <select v-model="form.type" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm appearance-none focus:ring-2 focus:ring-lake-200">
-                                    <option value="sightseeing">景點 Sightseeing</option>
-                                    <option value="food">美食 Food</option>
-                                    <option value="shopping">購物 Shopping</option>
-                                    <option value="transport">交通 Transport</option>
-                                    <option value="hotel">住宿 Hotel</option>
-                                </select>
-                            </div>
+                            <div class="col-span-3"><label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">類別</label><select v-model="form.type" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi appearance-none"><option value="sightseeing">景點</option><option value="food">美食</option><option value="shopping">購物</option><option value="transport">交通</option><option value="hotel">住宿</option></select></div>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">結束時間</label>
-                            <div class="flex gap-2">
-                                <select v-model="form.endHour" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm appearance-none text-center">
-                                    <option v-for="h in 24" :key="h-1" :value="(h-1).toString().padStart(2, '0')">{{ (h-1).toString().padStart(2, '0') }}</option>
-                                </select>
-                                <span class="py-3 text-stone-300">:</span>
-                                <select v-model="form.endMinute" class="flex-1 bg-stone-50 border-none rounded-xl px-2 py-3 text-sumi font-mono text-sm appearance-none text-center">
-                                    <option v-for="m in 12" :key="m-1" :value="((m-1)*5).toString().padStart(2, '0')">{{ ((m-1)*5).toString().padStart(2, '0') }}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">標題</label>
-                            <input v-model="form.title" type="text" placeholder="要去哪裡呢？" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm focus:ring-2 focus:ring-lake-200">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">地點</label>
-                            <div class="relative">
-                                <input v-model="form.location" type="text" placeholder="地點名稱..." class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 pl-10 text-sumi text-sm focus:ring-2 focus:ring-lake-200">
-                                <i class="fa-solid fa-map-pin absolute left-4 top-3.5 text-stone-300 text-sm"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">備註</label>
-                            <textarea v-model="form.note" rows="3" placeholder="補充資訊..." class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm resize-none"></textarea>
-                        </div>
+                        <div><label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">標題</label><input v-model="form.title" type="text" placeholder="標題" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi"></div>
                         <div class="pt-6 flex gap-3">
-                            <button v-if="isEditing" type="button" @click="confirmAction('deleteEvent')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors"><i class="fa-regular fa-trash-can"></i></button>
-                            <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold shadow-lg shadow-lake-200 hover:bg-lake-500 transition-all">{{ isEditing ? '儲存變更' : '加入行程' }}</button>
+                            <button v-if="isEditing" type="button" @click="confirmAction('deleteEvent')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center"><i class="fa-regular fa-trash-can"></i></button>
+                            <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold">{{ isEditing ? '儲存變更' : '加入行程' }}</button>
                         </div>
                     </form>
                 </div>
@@ -583,31 +569,20 @@
                     <div class="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-6"></div>
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-xl font-bold text-sumi tracking-wide">{{ editingFlightType === 'arrival' ? '去程航班' : '回程航班' }}</h2>
-                        <button @click="closeModal" class="w-8 h-8 rounded-full bg-stone-50 text-stone-400 flex items-center justify-center hover:bg-stone-100"><i class="fa-solid fa-xmark"></i></button>
+                        <button @click="closeModal" class="w-8 h-8 rounded-full bg-stone-50 text-stone-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <form @submit.prevent="saveFlight" class="space-y-6">
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">航班代號</label>
-                            <input v-model="flightForm.code" type="text" placeholder="e.g. JX838" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm uppercase font-mono">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">航空公司 / 標題</label>
-                            <input v-model="flightForm.title" type="text" placeholder="e.g. 星宇航空" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">起降時間</label>
-                            <input v-model="flightForm.time" type="text" placeholder="e.g. 14:55 - 18:30" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">機場 / 地點</label>
-                            <input v-model="flightForm.location" type="text" placeholder="中部國際機場 (NGO)" class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi text-sm">
-                        </div>
-                        <div class="pt-6 flex gap-3">
-                            <button type="button" @click="confirmAction('clearFlight')" class="w-12 h-12 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition-colors"><i class="fa-regular fa-trash-can"></i></button>
-                            <button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold shadow-lg shadow-lake-200 hover:bg-lake-500 transition-all">儲存航班資訊</button>
-                        </div>
+                        <div><label class="block text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest">航班代號</label><input v-model="flightForm.code" type="text" required class="w-full bg-stone-50 border-none rounded-xl px-4 py-3 text-sumi uppercase"></div>
+                        <div class="pt-6 flex gap-3"><button type="submit" class="flex-1 bg-lake-400 text-white py-3 rounded-xl font-bold">儲存航班資訊</button></div>
                     </form>
                 </div>
+            </div>
+        </transition>
+
+        <!-- Confirmation Modal -->
+        <transition name="fade">
+            <div v-if="confirmState.show" class="absolute inset-0 z-[120] flex items-center justify-center bg-stone-900/30 backdrop-blur-sm p-6" @click.self="confirmState.show = false">
+                <div class="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-xs text-center"><div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center mx-auto mb-4 text-xl"><i class="fa-solid fa-exclamation"></i></div><h3 class="text-lg font-bold text-sumi mb-2">確定刪除？</h3><p class="text-sm text-stone-400 mb-6">{{ confirmState.message }}</p><div class="flex gap-3"><button @click="confirmState.show = false" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-400">取消</button><button @click="executeConfirm" class="flex-1 py-2.5 rounded-xl bg-red-400 text-white font-bold">確認</button></div></div>
             </div>
         </transition>
 
@@ -619,13 +594,12 @@
 
     createApp({
         setup() {
-            // --- Configuration ---
+            // --- App Config & State ---
             const SUPABASE_URL = 'https://nrormwhklkytqyrbrdbr.supabase.co';
             const SUPABASE_KEY = 'sb_publishable_QuvW2VoIHavfZ7RunbOl1A_Fu34ri_D';
             const TRIP_ID = 'nagoya_main';
             const defaultCategories = ['藥妝', '伴手禮', '玩具', '食物', '其他'];
 
-            // --- App State ---
             const days = ref([{ date: 'Day 1', events: [] }]);
             const currentDayIndex = ref(0);
             const showModal = ref(false);
@@ -644,6 +618,7 @@
             
             const tabs = [
                 { id: 'itinerary', label: '行程', icon: 'fa-solid fa-calendar-days' },
+                { id: 'discover', label: '口袋名單', icon: 'fa-solid fa-star' },
                 { id: 'xuan', label: 'Xuan', icon: 'fa-solid fa-user' },
                 { id: 'chiau', label: 'Chiau', icon: 'fa-solid fa-user' },
             ];
@@ -653,36 +628,49 @@
             const chiauList = ref([]);
             const newItemText = ref({ xuan: '', chiau: '' });
             const newItemCategory = ref({ xuan: '', chiau: '' });
-            
             const moveModal = ref({ show: false, user: '', item: null });
             let longPressTimer = null;
 
+            // --- Discover State ---
+            const discoverList = ref([]);
+            const newDiscover = ref({ title: '', type: 'sightseeing', url: '' });
+
+            // --- Form State ---
             const arrivalFlight = ref({ code: '', time: '', title: '', location: '', note: '' });
             const departureFlight = ref({ code: '', time: '', title: '', location: '', note: '' });
             const flightForm = ref({ code: '', time: '', title: '', location: '', note: '' });
-            const form = ref({ 
-                id: null, time: '09:00', endTime: '10:00', hour: '09', minute: '00', endHour: '10', endMinute: '00',
-                type: 'sightseeing', title: '', location: '', note: '' 
-            });
+            const form = ref({ id: null, time: '09:00', endTime: '10:00', hour: '09', minute: '00', endHour: '10', endMinute: '00', type: 'sightseeing', title: '', location: '', note: '' });
 
-            // --- Methods: Shopping Logic ---
+            // --- Methods: Discover ---
+            const addDiscoverItem = () => {
+                if (!newDiscover.value.title.trim()) return;
+                discoverList.value.push({ id: Date.now(), ...newDiscover.value, title: newDiscover.value.title.trim(), url: newDiscover.value.url.trim() });
+                newDiscover.value = { title: '', type: 'sightseeing', url: '' };
+                saveToCloud();
+            };
+            const groupedDiscoverList = computed(() => {
+                const groups = {};
+                ['sightseeing', 'food', 'shopping', 'hotel', 'other'].forEach(type => {
+                    const filtered = discoverList.value.filter(i => i.type === type);
+                    if (filtered.length > 0) groups[type] = filtered;
+                });
+                return groups;
+            });
+            const getDiscoverIcon = (type) => ({ sightseeing: 'fa-camera-retro', food: 'fa-utensils', shopping: 'fa-bag-shopping', hotel: 'fa-bed', other: 'fa-bookmark' }[type] || 'fa-bookmark');
+            const openLink = (url) => url && window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+
+            // --- Methods: Shopping ---
             const addShoppingItem = (who) => {
                 const text = newItemText.value[who].trim();
                 const category = newItemCategory.value[who].trim() || '未分類';
                 if (!text) return;
-
-                const item = { id: Date.now(), text, category, checked: false };
-                if (who === 'xuan') xuanList.value.push(item); else chiauList.value.push(item);
-                
+                const list = (who === 'xuan' ? xuanList : chiauList);
+                list.value.push({ id: Date.now(), text, category, checked: false });
                 newItemText.value[who] = '';
-                // Category is kept for continuous input
                 saveToCloud();
             };
-
             const currentGroupedList = (who) => {
                 const list = who === 'xuan' ? xuanList.value : chiauList.value;
-                if (!list || list.length === 0) return {};
-                
                 const groups = {};
                 list.forEach(item => {
                     const cat = item.category || '未分類';
@@ -691,49 +679,18 @@
                 });
                 return groups;
             };
-
             const availableCategories = computed(() => {
                 const list = moveModal.value.user === 'xuan' ? xuanList.value : chiauList.value;
                 const existingCats = list.map(i => i.category || '未分類');
-                // Merge default and existing categories
-                const all = [...new Set([...defaultCategories, ...existingCats])];
-                // Ensure "未分類" is at the end
-                return all.filter(c => c !== '未分類').concat(['未分類']);
+                return [...new Set([...defaultCategories, ...existingCats])].filter(c => c !== '未分類').concat(['未分類']);
             });
+            const startLongPress = (user, item) => { longPressTimer = setTimeout(() => { moveModal.value = { show: true, user, item }; }, 600); };
+            const cancelLongPress = () => longPressTimer && clearTimeout(longPressTimer);
+            const moveItemTo = (newCat) => { if (moveModal.value.item) { moveModal.value.item.category = newCat; saveToCloud(); moveModal.value.show = false; } };
+            const promptNewCategory = () => { const newCat = prompt("請輸入新分類名稱："); if (newCat?.trim()) moveItemTo(newCat.trim()); };
 
-            const startLongPress = (user, item) => {
-                longPressTimer = setTimeout(() => {
-                    moveModal.value = { show: true, user, item };
-                }, 600);
-            };
-
-            const cancelLongPress = () => {
-                if (longPressTimer) clearTimeout(longPressTimer);
-            };
-
-            const moveItemTo = (newCat) => {
-                if (!moveModal.value.item) return;
-                moveModal.value.item.category = newCat;
-                saveToCloud();
-                moveModal.value.show = false;
-            };
-
-            const promptNewCategory = () => {
-                const newCat = prompt("請輸入新分類名稱：");
-                if (newCat && newCat.trim()) {
-                    moveItemTo(newCat.trim());
-                }
-            };
-
-            // --- Methods: Common ---
-            const confirmAction = (type, payload = null) => {
-                confirmState.value = { show: true, type, payload, message: '' };
-                if (type === 'deleteEvent') confirmState.value.message = '確定要刪除這個行程嗎？';
-                else if (type === 'deleteItem') confirmState.value.message = '確定要刪除此購物項目？';
-                else if (type === 'clearFlight') confirmState.value.message = '確定要清除此航班資訊？';
-                else if (type === 'reset') confirmState.value.message = '這將清除所有資料並重置。確定？';
-            };
-
+            // --- Methods: Core ---
+            const confirmAction = (type, payload = null) => { confirmState.value = { show: true, type, payload, message: type.includes('delete') ? '此操作無法還原，確定嗎？' : '確定重置所有行程嗎？' }; };
             const executeConfirm = () => {
                 const { type, payload } = confirmState.value;
                 confirmState.value.show = false;
@@ -741,132 +698,90 @@
                     const evs = days.value[currentDayIndex.value].events;
                     const idx = evs.findIndex(x => x.id === form.value.id);
                     if (idx !== -1) evs.splice(idx, 1);
-                    saveToCloud(); closeModal();
                 } else if (type === 'deleteItem') {
                     const list = payload.who === 'xuan' ? xuanList : chiauList;
                     const idx = list.value.findIndex(x => x.id === payload.id);
                     if (idx !== -1) list.value.splice(idx, 1);
-                    saveToCloud();
-                } else if (type === 'clearFlight') {
-                    const target = editingFlightType.value === 'arrival' ? arrivalFlight : departureFlight;
-                    target.value = { code: '', time: '', title: '', location: '', note: '' };
-                    saveToCloud(); closeModal();
+                } else if (type === 'deleteDiscover') {
+                    const idx = discoverList.value.findIndex(x => x.id === payload);
+                    if (idx !== -1) discoverList.value.splice(idx, 1);
                 } else if (type === 'reset') {
-                    saveToCloud(true); currentDayIndex.value = 0; viewMode.value = 'list';
+                    saveToCloud(true); return;
                 }
+                saveToCloud(); closeModal();
             };
 
             // --- Weather ---
             const todayWeatherSummary = computed(() => {
-                if (!weatherData.value || !weatherData.value.daily) return null;
-                const todayStr = new Date().toISOString().split('T')[0];
-                const index = weatherData.value.daily.time.indexOf(todayStr);
-                const targetIdx = index !== -1 ? index : 0;
-                return {
-                    max: Math.round(weatherData.value.daily.temperature_2m_max[targetIdx]),
-                    min: Math.round(weatherData.value.daily.temperature_2m_min[targetIdx]),
-                    code: weatherData.value.daily.weathercode?.[targetIdx] || 0
-                };
+                if (!weatherData.value?.daily) return null;
+                const idx = weatherData.value.daily.time.indexOf(new Date().toISOString().split('T')[0]);
+                const targetIdx = idx !== -1 ? idx : 0;
+                return { max: Math.round(weatherData.value.daily.temperature_2m_max[targetIdx]), min: Math.round(weatherData.value.daily.temperature_2m_min[targetIdx]), code: weatherData.value.daily.weathercode?.[targetIdx] || 0 };
             });
-
+            const getWeatherIcon = (code) => `fa-solid ${{ 0: 'fa-sun', 1: 'fa-sun', 2: 'fa-cloud-sun', 3: 'fa-cloud', 45: 'fa-smog', 61: 'fa-umbrella', 80: 'fa-cloud-showers-heavy' }[code] || 'fa-cloud'}`;
             const getEventWeather = (timeStr) => {
-                if (!weatherData.value || !startDate.value) return null;
+                if (!weatherData.value?.hourly || !startDate.value) return null;
                 const d = new Date(startDate.value); d.setDate(d.getDate() + currentDayIndex.value);
-                const hour = timeStr.split(':')[0].padStart(2, '0');
-                const key = `${d.toISOString().split('T')[0]}T${hour}:00`;
-                const idx = weatherData.value.hourly?.time.indexOf(key);
-                if (idx !== -1) return { temp: Math.round(weatherData.value.hourly.temperature_2m[idx]), code: weatherData.value.hourly.weathercode[idx] };
-                return null;
+                const key = `${d.toISOString().split('T')[0]}T${timeStr.split(':')[0].padStart(2, '0')}:00`;
+                const idx = weatherData.value.hourly.time.indexOf(key);
+                return idx !== -1 ? { temp: Math.round(weatherData.value.hourly.temperature_2m[idx]), code: weatherData.value.hourly.weathercode[idx] } : null;
             };
 
-            const getWeatherIcon = (code) => {
-                const map = { 0: 'fa-sun', 1: 'fa-sun', 2: 'fa-cloud-sun', 3: 'fa-cloud', 45: 'fa-smog', 48: 'fa-smog', 51: 'fa-cloud-rain', 53: 'fa-cloud-rain', 55: 'fa-cloud-rain', 61: 'fa-umbrella', 63: 'fa-umbrella', 65: 'fa-umbrella', 80: 'fa-cloud-showers-heavy', 81: 'fa-cloud-showers-heavy', 82: 'fa-cloud-showers-heavy', 95: 'fa-bolt' };
-                return `fa-solid ${map[code] || 'fa-cloud'}`;
-            };
+            // --- Map Logic ---
+            const toggleViewMode = () => { viewMode.value = viewMode.value === 'list' ? 'map' : 'list'; if (viewMode.value === 'map') nextTick(() => { if (!map) { map = L.map('map-container').setView([35.1709, 136.8815], 13); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' }).addTo(map); } renderMapMarkers(); }); };
+            const renderMapMarkers = () => { if (!map) return; markers.forEach(m => map.removeLayer(m)); markers = []; const evs = days.value[currentDayIndex.value]?.events || []; const bounds = L.latLngBounds(); let hasPts = false; evs.forEach(e => { if (e.lat && e.lng) { markers.push(L.marker([e.lat, e.lng]).addTo(map).bindPopup(e.title)); bounds.extend([e.lat, e.lng]); hasPts = true; } }); if (hasPts) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 }); };
 
-            // --- Supabase ---
+            // --- Data Persistence ---
             let supabase = null;
             const saveToCloud = async (forceReset = false) => {
                 if (!supabase) return;
                 status.value = 'loading';
-                const content = forceReset ? { tripTitle: 'Nagoya.Go', days: [{ date: 'Day 1', events: [] }], xuanList: [], chiauList: [] } : { 
-                    tripTitle: tripTitle.value, startDate: startDate.value, endDate: endDate.value, 
-                    days: days.value, xuanList: xuanList.value, chiauList: chiauList.value,
-                    arrivalFlight: arrivalFlight.value, departureFlight: departureFlight.value
-                };
-                if(forceReset) { days.value = content.days; xuanList.value = []; chiauList.value = []; }
+                const content = forceReset ? { tripTitle: 'Nagoya.Go', days: [{ date: 'Day 1', events: [] }], xuanList: [], chiauList: [], discoverList: [] } : { tripTitle: tripTitle.value, startDate: startDate.value, endDate: endDate.value, days: days.value, xuanList: xuanList.value, chiauList: chiauList.value, discoverList: discoverList.value, arrivalFlight: arrivalFlight.value, departureFlight: departureFlight.value };
+                if (forceReset) { days.value = [{ date: 'Day 1', events: [] }]; xuanList.value = []; chiauList.value = []; discoverList.value = []; }
                 const { error } = await supabase.from('trip_plans').upsert({ id: TRIP_ID, content });
                 status.value = error ? 'error' : 'connected';
             };
-
             const initSupabase = async () => {
                 const { createClient } = window.supabase;
                 supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
                 const { data } = await supabase.from('trip_plans').select('content').eq('id', TRIP_ID).maybeSingle();
                 if (data?.content) {
-                    days.value = data.content.days || [{ date: 'Day 1', events: [] }];
-                    tripTitle.value = data.content.tripTitle || 'Nagoya.Go';
-                    startDate.value = data.content.startDate || new Date().toISOString().split('T')[0];
-                    endDate.value = data.content.endDate || '';
-                    xuanList.value = data.content.xuanList || [];
-                    chiauList.value = data.content.chiauList || [];
-                    arrivalFlight.value = data.content.arrivalFlight || { code: '' };
-                    departureFlight.value = data.content.departureFlight || { code: '' };
+                    const c = data.content;
+                    days.value = c.days || [{ date: 'Day 1', events: [] }];
+                    tripTitle.value = c.tripTitle || 'Nagoya.Go';
+                    startDate.value = c.startDate || new Date().toISOString().split('T')[0];
+                    xuanList.value = c.xuanList || [];
+                    chiauList.value = c.chiauList || [];
+                    discoverList.value = c.discoverList || [];
+                    arrivalFlight.value = c.arrivalFlight || { code: '' };
+                    departureFlight.value = c.departureFlight || { code: '' };
                 }
                 status.value = 'connected';
             };
 
-            // --- Helpers ---
-            const formatDuration = (s, e) => {
-                if(!s || !e) return '';
-                const [sh, sm] = s.split(':').map(Number), [eh, em] = e.split(':').map(Number);
-                let diff = (eh * 60 + em) - (sh * 60 + sm);
-                if(diff < 0) diff += 1440;
-                const h = Math.floor(diff/60), m = diff%60;
-                return `${h?h+'hr ':''}${m?m+'min':''}`;
-            };
-
-            const getTypeColor = (t, m) => {
-                const colors = { sightseeing: 'lake-400', food: 'orange-400', shopping: 'pink-400', transport: 'stone-400', hotel: 'indigo-400' };
-                const c = colors[t] || colors.sightseeing;
-                return m === 'dot' ? 'bg-'+c : (m === 'header' ? 'bg-'+c : 'text-'+c);
-            };
-
-            const getTypeName = (t) => ({ sightseeing: '景點', food: '美食', shopping: '購物', transport: '交通', hotel: '住宿' }[t] || '行程');
-            const getDayDateString = (i, s) => {
-                const d = new Date(startDate.value); d.setDate(d.getDate() + i);
-                return `${d.getMonth()+1}/${d.getDate()}${s?' '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]:''}`;
-            };
+            // --- Lifecycle & Helpers ---
+            const formatDuration = (s, e) => { if (!s || !e) return ''; const [sh, sm] = s.split(':').map(Number), [eh, em] = e.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d < 0) d += 1440; return `${Math.floor(d / 60)}hr ${d % 60}min`; };
+            const getTypeColor = (t, m) => { const c = { sightseeing: 'lake-400', food: 'orange-400', shopping: 'pink-400', transport: 'stone-400', hotel: 'indigo-400' }[t] || 'lake-400'; return m === 'dot' ? 'bg-' + c : (m === 'header' ? 'bg-' + c : 'text-' + c); };
+            const getTypeName = (t) => ({ sightseeing: '景點', food: '美食', shopping: '購物', transport: '交通', hotel: '住宿', other: '其他' }[t] || '行程');
+            const getDayDateString = (i, s) => { const d = new Date(startDate.value); d.setDate(d.getDate() + i); return `${d.getMonth() + 1}/${d.getDate()}${s ? ' ' + ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] : ''}`; };
             const closeModal = () => showModal.value = false;
             const openAddModal = () => { isFlightMode.value = false; isEditing.value = false; form.value = { id: Date.now(), time: '09:00', endTime: '10:00', hour: '09', minute: '00', endHour: '10', endMinute: '00', type: 'sightseeing', title: '', location: '', note: '' }; showModal.value = true; };
-            const editEvent = (e) => { isFlightMode.value = false; isEditing.value = true; const [h, m] = e.time.split(':'), [eh, em] = e.endTime.split(':'); form.value = { ...e, hour: h, minute: m, endHour: eh, endMinute: em }; showModal.value = true; };
-            const saveEvent = () => {
-                form.value.time = `${form.value.hour}:${form.value.minute}`; form.value.endTime = `${form.value.endHour}:${form.value.endMinute}`;
-                const evs = days.value[currentDayIndex.value].events;
-                if(isEditing.value) { const idx = evs.findIndex(x => x.id === form.value.id); evs[idx] = { ...form.value }; } else { evs.push({ ...form.value }); }
-                saveToCloud(); closeModal();
-            };
+            const editEvent = (e) => { isFlightMode.value = false; isEditing.value = true; const [sh, sm] = e.time.split(':'), [eh, em] = e.endTime.split(':'); form.value = { ...e, hour: sh, minute: sm, endHour: eh, endMinute: em }; showModal.value = true; };
+            const saveEvent = () => { form.value.time = `${form.value.hour}:${form.value.minute}`; form.value.endTime = `${form.value.endHour}:${form.value.endMinute}`; const evs = days.value[currentDayIndex.value].events; if (isEditing.value) { const idx = evs.findIndex(x => x.id === form.value.id); evs[idx] = { ...form.value }; } else evs.push({ ...form.value }); saveToCloud(); closeModal(); };
             const openFlightModal = (t) => { isFlightMode.value = true; editingFlightType.value = t; flightForm.value = { ...(t === 'arrival' ? arrivalFlight.value : departureFlight.value) }; showModal.value = true; };
-            const saveFlight = () => { if(editingFlightType.value === 'arrival') arrivalFlight.value = { ...flightForm.value }; else departureFlight.value = { ...flightForm.value }; saveToCloud(); closeModal(); };
-            const manualAddDay = () => { days.value.push({ date: `Day ${days.value.length+1}`, events: [] }); saveToCloud(); };
+            const saveFlight = () => { if (editingFlightType.value === 'arrival') arrivalFlight.value = { ...flightForm.value }; else departureFlight.value = { ...flightForm.value }; saveToCloud(); closeModal(); };
+            const manualAddDay = () => { days.value.push({ date: `Day ${days.value.length + 1}`, events: [] }); saveToCloud(); };
             const changeDay = (i) => currentDayIndex.value = i;
-            const fetchWeather = async () => {
-                try {
-                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=35.18&longitude=136.91&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Asia%2FTokyo&forecast_days=16`);
-                    weatherData.value = await res.json();
-                } catch(e) { console.error(e); }
-            };
+            const fetchWeather = async () => { try { const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=35.18&longitude=136.91&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Asia%2FTokyo&forecast_days=16`); weatherData.value = await res.json(); } catch (e) { console.error(e); } };
 
             onMounted(() => { initSupabase(); fetchWeather(); });
 
             return {
-                days, currentDayIndex, showModal, isEditing, form, startDate, endDate, tripTitle, status, viewMode, isScrolled, currentTab, tabs, xuanList, chiauList, newItemText, newItemCategory, arrivalFlight, departureFlight, flightForm, confirmState, todayWeatherSummary, moveModal, availableCategories,
-                confirmAction, executeConfirm, addShoppingItem, currentGroupedList, formatDuration, getTypeColor, getTypeName, getDayDateString, getEventWeather, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, saveToCloud, openFlightModal, saveFlight, manualAddDay, changeDay, startLongPress, cancelLongPress, moveItemTo, promptNewCategory,
+                days, currentDayIndex, showModal, isEditing, form, startDate, endDate, tripTitle, status, viewMode, isScrolled, currentTab, tabs, xuanList, chiauList, discoverList, newDiscover, newItemText, newItemCategory, arrivalFlight, departureFlight, flightForm, confirmState, todayWeatherSummary, moveModal, availableCategories,
+                confirmAction, executeConfirm, addShoppingItem, currentGroupedList, formatDuration, getTypeColor, getTypeName, getDayDateString, getEventWeather, getWeatherIcon, openAddModal, editEvent, closeModal, saveEvent, saveToCloud, openFlightModal, saveFlight, manualAddDay, changeDay, startLongPress, cancelLongPress, moveItemTo, promptNewCategory, addDiscoverItem, groupedDiscoverList, getDiscoverIcon, openLink,
                 sortedEvents: computed(() => [...(days.value[currentDayIndex.value]?.events || [])].sort((a, b) => a.time.localeCompare(b.time))),
                 getMapUrl: (l) => l ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l)}` : '#',
-                toggleViewMode: () => viewMode.value = viewMode.value === 'list' ? 'map' : 'list',
-                checkScroll: (e) => isScrolled.value = e.target.scrollTop > 10,
-                handleDateChange: () => saveToCloud()
+                toggleViewMode, checkScroll: (e) => isScrolled.value = e.target.scrollTop > 10, handleDateChange: () => saveToCloud()
             };
         }
     }).mount('#app');
